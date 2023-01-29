@@ -549,9 +549,11 @@ int set_plc(void)
       plc.center[0]=gsl_rng_uniform(random_generator)*MyGrids[0].GSglobal[_x_];
       plc.center[1]=gsl_rng_uniform(random_generator)*MyGrids[0].GSglobal[_y_];
       plc.center[2]=gsl_rng_uniform(random_generator)*MyGrids[0].GSglobal[_z_];
-      plc.zvers[0]=1.0;
-      plc.zvers[1]=1.0;
-      plc.zvers[2]=1.0;
+      double mytheta=acos(2*gsl_rng_uniform(random_generator)-1);
+      double myphi=gsl_rng_uniform(random_generator)*2.0*PI;
+      plc.zvers[0]=sin(mytheta)*cos(myphi);
+      plc.zvers[1]=sin(mytheta)*sin(myphi);
+      plc.zvers[2]=cos(mytheta);
     }
   
   /* normalization of the cone axis direction */

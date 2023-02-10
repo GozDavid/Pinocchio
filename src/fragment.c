@@ -21,8 +21,6 @@ int shift_all_displacements(void);
 int recompute_group_velocities(void);
 #endif
 
-int ngroups;
-
 
 void set_fragment_parameters(int order)
 {
@@ -1152,11 +1150,14 @@ double compute_Nhalos_in_PLC(double z1, double z2)
 {
   /* analytic prediction of the number of halos in the PLC */
 
-  double MinMass=log(params.ParticleMass*params.MinHaloMass);
-  double delta_z=0.01;
-  double result, error, upper, lower;
-  double number=0;
+  double MinMass    = log(params.ParticleMass*params.MinHaloMass);
+  double delta_z    = 0.01;
+  double number     = 0;
   double solidangle = (1-cos( (params.PLCAperture>90. ? 90. : params.PLCAperture)  /180.*PI) )*2.*PI;
+  
+  double result, error, upper, lower;
+  gsl_function Function;
+  
   Function.function = &Integrand_MF;
   lower=z1;
   do
@@ -1202,8 +1203,9 @@ int estimate_file_size(void)
   if (params.CatalogInAscii)
     return 0;
 
-  double result, error, total=0.0, size, number;
-  int gb;
+  double       result, error, total=0.0, size, number;
+  int          gb;
+  gsl_function Function;
   
   printf("ESTIMATED STORAGE REQUIREMENTS:\n");
 

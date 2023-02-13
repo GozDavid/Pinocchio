@@ -338,19 +338,21 @@ int write_catalog(int iout)
 	  fwrite(&idummy,sizeof(int),1,file);
 	  idummy=2*sizeof(int);
 	  fwrite(&idummy,sizeof(int),1,file);
-	}
-      idummy=sizeof(int);
-      fwrite(&idummy,sizeof(int),1,file);
-      fwrite(&ngood,sizeof(int),1,file);
-      fwrite(&idummy,sizeof(int),1,file);
+	
+	  idummy=sizeof(int);
+	  fwrite(&idummy,sizeof(int),1,file);
+	  fwrite(&ngood,sizeof(int),1,file);
+	  fwrite(&idummy,sizeof(int),1,file);
 
-      if (ngood)
-	{
-	  idummy=ngood*sizeof(catalog_data);
-	  fwrite(&idummy,sizeof(int),1,file);
-	  for (igood=0; igood<ngood; igood++)
-	    fwrite(mycat+igood,sizeof(catalog_data),1,file);
-	  fwrite(&idummy,sizeof(int),1,file);
+	  if (ngood)
+	    {
+	      idummy=ngood*sizeof(catalog_data);
+	      fwrite(&idummy,sizeof(int),1,file);
+	      for (igood=0; igood<ngood; igood++)
+		fwrite(mycat+igood,sizeof(catalog_data),1,file);
+	      fwrite(&idummy,sizeof(int),1,file);
+	    }
+
 	}
 
       nhalos+=ngood;

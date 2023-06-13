@@ -62,7 +62,7 @@ int fails;
 
 // PER LUCA: controlliamo che sto aggiungendo bene le funzioni
 #ifdef TABULATED_CT
-double  interpolate_collapse_time(double, double, double) //__attribute__((always_inline));
+double  interpolate_collapse_time(double, double, double); //__attribute__((always_inline));
 
 // quanto segue alla fine potra` essere spostato giu` dove inizia la parte TABULATED_CT
 
@@ -736,7 +736,7 @@ int initialize_collapse_times(int ismooth, int onlycompute)
 	  l2  = (delta_vector[id] -    x +    y)/3.0*ampl;
 	  l3  = (delta_vector[id] -    x - 2.*y)/3.0*ampl;
 
-	  CT_table[i]= ell(l1,l2,l3);
+	  CT_table[i]= ell(ismooth,l1,l2,l3);
 	}
 
       MPI_Allgatherv( MPI_IN_PLACE, counts[ThisTask], MPI_DOUBLE, CT_table, counts, displs, MPI_DOUBLE, MPI_COMM_WORLD );

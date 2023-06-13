@@ -38,9 +38,9 @@ OMP   = NO
 
 OPTIONS += -DTWO_LPT
 OPTIONS += -DTHREE_LPT
-OPTIONS += -DPLC
-OPTIONS += -DNORADIATION
-#OPTIONS += -DTABULATED_CT
+# OPTIONS += -DPLC
+# OPTIONS += -DNORADIATION
+OPTIONS += -DTABULATED_CT
 #OPTIONS += -DELL_SNG
 OPTIONS += -DELL_CLASSIC
 #OPTIONS += -DSCALE_DEPENDENT
@@ -102,7 +102,7 @@ endif
 ifeq ($(SYSTYPE),"my_machine")
 CC          =  mpicc
 CDEBUG      = -ggdb3 -Wall $(OMP_FLAG)
-COPTIMIZED  = -O3 -Wno-unused-result $(OMP_FLAG)
+COPTIMIZED  = -g -O3 -Wno-unused-result $(OMP_FLAG)
 FFTW_LIBR   = -L$(HOME)/lib -lfftw3_mpi -lfftw3 $(OMP_FFTW)
 FFTW_INCL   = -I/usr/local/include -I$(HOME)/include
 PFFT_LIBR   = -lpfft

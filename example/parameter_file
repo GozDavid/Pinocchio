@@ -3,9 +3,9 @@
 # run properties
 RunFlag                example      % name of the run
 OutputList             outputs      % name of file with required output redshifts
-BoxSize                500.0        % physical size of the box in Mpc
+BoxSize                256.0        % physical size of the box in Mpc
 BoxInH100                           % specify that the box is in Mpc/h
-GridSize               200          % number of grid points per side
+GridSize               256          % number of grid points per side
 RandomSeed             486604       % random seed for initial conditions
 
 # cosmology
@@ -27,9 +27,9 @@ WDM_PartMass_in_kev    0.0          % WDM cut following Bode, Ostriker & Turok (
 
 # control of memory requirements
 BoundaryLayerFactor    3.0          % width of the boundary layer for fragmentation
-MaxMem                 3600         % max available memory to an MPI task in Mbyte
-MaxMemPerParticle      150          % max available memory in bytes per particle
-PredPeakFactor         0.8          % guess for the number of peaks in the subvolume
+MaxMem                 7281         % max available memory to an MPI task in Mbyte
+MaxMemPerParticle      900          % max available memory in bytes per particle
+PredPeakFactor         2.8          % guess for the number of peaks in the subvolume
 
 # output
 CatalogInAscii                      % catalogs are written in ascii and not in binary format

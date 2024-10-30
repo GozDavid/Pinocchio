@@ -12,10 +12,13 @@ else
 	exit 2
     fi
 
-    if ! command -v scorep &>/dev/null
+    if [ ${PROFILING} -eq 1 ]
     then
-	printf "\n\t scorep not found... aborting... \n"
-	exit 3
+	if ! command -v scorep &>/dev/null
+	then
+	    printf "\n\t scorep not found... aborting... \n"
+	    exit 3
+	fi
     fi
 fi
 
@@ -50,6 +53,13 @@ do
 	GPU_SWITCH=YES
     fi
 
+    if [ ${ENERGY} -eq 1 ]
+    then
+	ENERGY_SWITCH=YES
+    else
+	ENERGY_SWITCH=NO
+    fi
+    
     if [ ${PROFILING} -eq 1 ] || [ ${TRACING} -eq 1 ]
     then
 	# Scorep compilation
@@ -62,7 +72,7 @@ do
 
     printf "\n\t Compiling ${EXE_SCOREP}... \n"
     COMPILE=compile_${EXE_SCOREP}.txt
-    make clean && make EXEC=${EXE_SCOREP} COMPILER=${CC} DEBUG=${DEBUG_SWITCH} OMP=${OMP_SWITCH} GPU=${GPU_SWITCH} SYSTYPE=${SYSTEM} SCOREP=${SCOREP_SWITCH} |& tee ${COMPILE}
+    make clean && make EXEC=${EXE_SCOREP} COMPILER=${CC} DEBUG=${DEBUG_SWITCH} OMP=${OMP_SWITCH} GPU=${GPU_SWITCH} SYSTYPE=${SYSTEM} ENERGY=${ENERGY_SWITCH} SCOREP=${SCOREP_SWITCH} |& tee ${COMPILE}
     file ${EXE_SCOREP} |& tee -a ${COMPILE}
     ldd ${EXE_SCOREP} |& tee -a ${COMPILE}
 

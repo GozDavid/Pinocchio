@@ -1,7 +1,7 @@
 # This is an example parameter file for the Pinocchio 4.0 code
 
 # run properties
-RunFlag                last_test     % name of the run
+RunFlag                test     % name of the run
 OutputList             outputs      % name of file with required output redshifts
 BoxSize                256          % physical size of the box in Mpc
 BoxInH100                           % specify that the box is in Mpc/h

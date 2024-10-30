@@ -7,3 +7,5 @@
 *_profiling/
 *Scorep*
 log
+*example/*
+gpu_omp/example/*

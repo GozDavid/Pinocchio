@@ -408,7 +408,7 @@ typedef struct
 extern cputime_data cputime;
 
 #if defined(_ENERGY_)
-#include pmt_energy.h
+//#include pmt_energy.h
 #endif // _ENERGY_
 
 #ifdef GPU_OMP

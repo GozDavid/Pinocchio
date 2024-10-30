@@ -120,7 +120,7 @@ GPU_FLAG = -gpu=cc80 -target=gpu -gpu=nomanaged
 endif
 ifeq ($(DEBUG), YES)
 OPTIONS += -DGPU_OMP_DEBUG
-GPU_FLAG = -gpu=ccnative,debug,lineinfo -target=gpu -gpu=nomanaged -mp=gpu
+GPU_FLAG = -gpu=ccnative,debug,lineinfo -target=gpu -gpu=nomanaged
 endif
 else
 GPU_FLAG =
@@ -138,15 +138,13 @@ OMP_FFTW = -lfftw3_omp
 ifeq ($(GPU), YES)
 OMP_FLAG = -mp=multicore,gpu
 endif
-endif
-
-ifeq ($(OMP), NO)
+else
 ifeq ($(GPU), YES)
 OMP_FLAG = -mp=gpu
 endif
 OMP_FLAG =
 OMP_FFTW =
-endif
+endif # OMP, YES
 
 ifeq ($(ENERGY), YES)
 OPTIONS += -D_ENERGY_
@@ -291,7 +289,7 @@ INC =  $(PFFT_INCL) $(FFTW_INCL) $(MPI_INCL) $(GSL_INCL)
 
 # Library flags #
 
-LIB =  -lm $(PFFT_LIBR) $(FFTW_LIBR) $(MPI_LIBR) $(GSL_LIBR)
+LIB = -lm $(PFFT_LIBR) $(FFTW_LIBR) $(MPI_LIBR) $(GSL_LIBR)
 
 # Compiler options : choose from CDEBUG or COPTIMIZED #
 

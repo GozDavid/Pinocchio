@@ -372,14 +372,14 @@ int compute_collapse_times_gpu(int ismooth)
   double local_average = 0.0, local_variance = 0.0;
   int all_fails = 0; 
   
-  const size_t Nblocks = ((total_size + GPU_OMP_BLOCK - 1) / GPU_OMP_BLOCK);
+  //  const size_t Nblocks = ((total_size + GPU_OMP_BLOCK - 1) / GPU_OMP_BLOCK);
   
   tmp = MPI_Wtime();
 
 #if defined(GPU_OMP_DEBUG)
    #pragma omp target map(tofrom: local_average, local_variance, all_fails) device(internal.device.devID)
 #else
-   #pragma omp target teams num_teams(Nblocks) thread_limit(GPU_OMP_BLOCK) distribute parallel for num_threads(GPU_OMP_BLOCK) reduction(+: local_average, local_variance, all_fails) device(internal.device.devID)
+   #pragma omp target teams distribute parallel for reduction(+: local_average, local_variance, all_fails) device(internal.device.devID)
 #endif // GPU_OMP_DEBUG  
   for (unsigned int index=0 ; index<total_size ; index++)
     {

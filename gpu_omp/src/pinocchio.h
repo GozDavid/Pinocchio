@@ -31,12 +31,14 @@
 
 #ifdef GPU_OMP
 #define ALIGN_GPU     256
-#define GPU_OMP_BLOCK 32
 
+/* for code portability (NVIDIA / AMD) is better do not */
+/* hard code the block size                             */
+/* #define GPU_OMP_BLOCK 32
 // sanity check
 #if GPU_OMP_BLOCK > 1024
 #error "GPU_OMP_BLOCK cannot be larger than 1024"
-#endif
+#endif */
 
 #endif // GPU_OMP
 #if defined(CUSTOM_INTERPOLATION) || defined(GPU_OMP)
@@ -408,7 +410,7 @@ typedef struct
 extern cputime_data cputime;
 
 #if defined(_ENERGY_)
-//#include pmt_energy.h
+#include energy_pmt.h
 #endif // _ENERGY_
 
 #ifdef GPU_OMP

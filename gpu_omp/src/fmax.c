@@ -129,10 +129,10 @@ int compute_fmax(void)
 	return 1;
 #endif // TABULATED_CT
 
-      cputmp=MPI_Wtime()-cputmp;
+      // cputmp=MPI_Wtime()-cputmp;
       if (!ThisTask)
 	printf("[%s] Done computing collapse times, cpu time = %f s\n",fdate(),cputmp);
-      cputime.coll+=cputmp;
+      // cputime.coll+=cputmp;
 
       /*
 	End of cycle on smoothing radii
@@ -161,7 +161,7 @@ int compute_fmax(void)
   /*---------------- Free GPU/CPU memory ----------------------*/
 
   /*----- Free GPU spline ----*/
-  omp_target_free(internal.device.gpu_main_memory, internal.device.devID);
+  omp_target_free(internal.device.gpu_main_memory, devID);
   free(host_products.Rmax);
   free(host_products.Fmax);
   

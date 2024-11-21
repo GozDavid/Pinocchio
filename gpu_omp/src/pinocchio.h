@@ -1,5 +1,7 @@
 /* ######HEADER###### */
 
+#pragma once
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -18,6 +20,9 @@
 #include <fftw3-mpi.h>
 #include <pfft.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 
 #ifdef _OPENMP
    #include <omp.h>
@@ -45,6 +50,8 @@
 #include "cubic_spline_interpolation.h"
 #endif // defined(CUSTOM_INTERPOLATION) || defined(GPU_OMP)
 
+// header for PMT library
+#include "energy/energy_pmt.h"
 
 /* this library is used to vectorize the computation of collapse times */
 /* #if !(defined(__aarch64__) || defined(__arm__)) */
@@ -181,8 +188,6 @@ struct gpu_memory_second_derivatives
   
 typedef struct
 {
-  int hostID;                                                     /* host's (MPI process) ID                                */
-  int devID;                                                      /* device's ID assigned to the MPI process                */
                                                                   /* one-to-one correspondence between MPI processes        */
                                                                   /* and GPUs is assumed                                    */
   size_t memory;                                                  /* total GPU required memory                              */
@@ -192,8 +197,10 @@ typedef struct
   struct gpu_memory_second_derivatives memory_second_derivatives; /* memory in bytes required by the GPU second derivatives */
 } gpuOMP;
 
-#endif // GPU_OMP
+extern int hostID; /* host's (MPI process) ID                 */
+extern int devID;  /* device's ID assigned to the MPI process */
 
+#endif // GPU_OMP
 
 typedef struct
 {
@@ -408,10 +415,6 @@ typedef struct
     ;
 } cputime_data;
 extern cputime_data cputime;
-
-#if defined(_ENERGY_)
-#include energy_pmt.h
-#endif // _ENERGY_
 
 #ifdef GPU_OMP
 typedef struct
@@ -768,3 +771,4 @@ void coord_transformation_cartesian_polar(PRODFLOAT *, double *, double *, doubl
 #else
    #define FORCE_INLINE inline
 #endif /* _SCOREP */
+

@@ -15,8 +15,6 @@ do
     export SCOREP_ENABLE_TRACING=1
     export SCOREP_EXPERIMENT_DIRECTORY=tracing
 
-    export OMP_WAIT_POLICY=ACTIVE
-
     for EXE in ${EXEC[@]}
     do
 	printf "\n\t Running ${EXE}... \n"

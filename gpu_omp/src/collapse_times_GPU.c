@@ -223,9 +223,9 @@ void common_initialization_gpu(const unsigned int size)
   /* synch kernel */
 
 #if defined(GPU_OMP_DEBUG)
- #pragma omp target device(internal.device.devID)
+ #pragma omp target device(devID)
 #else
- #pragma omp target teams distribute parallel for device(internal.device.devID)
+ #pragma omp target teams distribute parallel for device(devID)
 #endif // GPU_OMP_DEBUG
   for (unsigned int i=0 ; i<size ; i++)
     {
@@ -279,11 +279,13 @@ int compute_collapse_times_gpu(int ismooth)
       common_initialization_gpu(total_size);
     }
 
+  /* PMT measure */
+  PMT_CPU_START("collapse_time_CPU", ThisTask);
+  PMT_GPU_START("collapse_time_GPU", devID, ThisTask);
   /* timing the main loop of 'compute_collapse_times' function */
-  double cputmp, tmp;
-
+  double cputmp, tmp;  
   cputmp = tmp = MPI_Wtime();  
-
+  
   /*--------------------- GPU memory movements ----------------------------------------*/
   
   /* copy second_derivatives to the GPU using multiple threads */
@@ -299,8 +301,8 @@ int compute_collapse_times_gpu(int ismooth)
 			  (total_size * sizeof(double)),
 			  (internal.device.memory_second_derivatives.offset + internal.device.memory_second_derivatives.tensor[i]),
 			  0,
-			  internal.device.devID,
-			  internal.device.hostID);
+			  devID,
+			  hostID);
       }
   } // omp parallel
   
@@ -320,9 +322,9 @@ int compute_collapse_times_gpu(int ismooth)
   tmp = MPI_Wtime();
 
 #if defined(GPU_OMP_DEBUG)
-   #pragma omp target map(tofrom: local_average, local_variance, all_fails) device(internal.device.devID)
+   #pragma omp target map(tofrom: local_average, local_variance, all_fails) device(devID)
 #else
-   #pragma omp target teams distribute parallel for reduction(+: local_average, local_variance, all_fails) device(internal.device.devID)
+   #pragma omp target teams distribute parallel for reduction(+: local_average, local_variance, all_fails) device(devID)
 #endif // GPU_OMP_DEBUG  
   for (unsigned int index=0 ; index<total_size ; index++)
     {
@@ -366,7 +368,7 @@ int compute_collapse_times_gpu(int ismooth)
   /*--------------------- GPU memory movements ----------------------------------------*/
 
   tmp = MPI_Wtime();
-
+  
   #pragma omp parallel
   {
     #pragma omp single nowait
@@ -377,8 +379,8 @@ int compute_collapse_times_gpu(int ismooth)
 			(total_size * sizeof(int)),
 			0,
 			(internal.device.memory_products.offset + internal.device.memory_products.Rmax),
-			internal.device.hostID,
-			internal.device.devID);
+			hostID,
+			devID);
     } // omp single nowait
 
     #pragma omp single nowait
@@ -389,8 +391,8 @@ int compute_collapse_times_gpu(int ismooth)
 			(total_size * sizeof(PRODFLOAT)),
 			0,
 			(internal.device.memory_products.offset + internal.device.memory_products.Fmax),
-			internal.device.hostID,
-			internal.device.devID);
+			hostID,
+			devID);
     } // omp single nowait
 
     #pragma omp barrier
@@ -424,9 +426,13 @@ int compute_collapse_times_gpu(int ismooth)
 	
   /* Stores the true variance*/
   Smoothing.TrueVariance[ismooth] = global_variance;
-
+  
   /* CPU collapse time */	
   cputime.coll += (MPI_Wtime() - cputmp);
+
+  /* PMT measures */
+  PMT_CPU_STOP("collapse_time_CPU", ThisTask);
+  PMT_GPU_STOP("collapse_time_GPU", devID, ThisTask);
   
   return 0;
 

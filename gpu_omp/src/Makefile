@@ -38,13 +38,17 @@ SYSTYPE ?= LeonardoBoost
 # Executable name
 EXEC     ?= Pinocchio
 # Compilation options
-COMPILER ?= mpicc
-DEBUG    ?= NO
-OMP      ?= NO
-GPU      ?= NO
-SCOREP   ?= NO
-NSIGHT   ?= NO
-ENERGY   ?= NO
+
+# C compiler
+COMPILER_CC  ?= mpicc
+COMPILER_CPP ?= mpic++
+DEBUG        ?= NO
+OMP          ?= NO
+GPU          ?= NO
+SCOREP       ?= NO
+NSIGHT       ?= NO
+ENERGY_CPU   ?= NO
+ENERGY_GPU   ?= NO
 ####################################################################
 
 ########## Preprocessor Definitions ################################
@@ -104,6 +108,45 @@ OPTIONS += -DNORADIATION
 #########################################################################################
 #########################################################################################
 
+ifeq ($(SCOREP)$(ENERGY_CPU),YESYES)
+$(error "Score-P and PMT are mutually exclusive")
+endif
+
+ifeq ($(SCOREP)$(ENERGY_GPU),YESYES)
+$(error "Score-P and PMT are mutually exclusive")
+endif
+
+################### SCOREP configuration ############################
+ifeq ($(SCOREP), YES)
+SCOREP_FLAG = scorep --user
+OPTIONS += -D_SCOREP
+else
+SCOREP_FLAG = 
+endif
+#####################################################################
+
+########## ENERGY OPTIONS ###################################
+ENERGY = NO
+
+ifeq ($(ENERGY_CPU), YES)
+ENERGY = YES
+OPTIONS += -D_ENERGY_RAPL_   # switch-on CPU power measurements through RAPL counters
+endif
+
+ifeq ($(ENERGY_GPU), YES)
+ENERGY = YES
+OPTIONS += -D_ENERGY_NVIDIA_ # switch-on NVIDIA GPU power measurements
+# OPTIONS += -D_ENERGY_AMD_    # switch-on AMD GPU power measurements
+endif
+
+ifeq ($(ENERGY), YES)
+OPTIONS += -D_ENERGY_PMT_ # use PMT library
+COMPILER = $(COMPILER_CPP)
+else
+COMPILER = $(COMPILER_CC)
+endif
+
+#############################################################
 
 ####################### CPU flag #####################
 ifeq ($(DEBUG), YES)
@@ -146,20 +189,6 @@ OMP_FLAG =
 OMP_FFTW =
 endif # OMP, YES
 
-ifeq ($(ENERGY), YES)
-OPTIONS += -D_ENERGY_
-endif
-
-# Scorep configuration #
-ifeq ($(SCOREP), YES)
-SCOREP_FLAG = scorep --user
-OPTIONS += -D_SCOREP
-else
-SCOREP_FLAG = 
-endif
-
-CC = $(SCOREP_FLAG) $(COMPILER)
-
 ########################### SYSTYPE CONFIGURATION ###################################
 #####################################################################################
 ######################################################################################
@@ -176,8 +205,6 @@ MPI_INCL    = -I$(SMPI_ROOT)/include
 GSL_LIBR    = -L$(GSL_LIB) -lgsl -lgslcblas -lm
 GSL_INCL    = -I$(GSL_INC)
 endif
-
-
 
 ###################### LEONARDO ######################
 
@@ -204,12 +231,13 @@ endif
 
 ifeq ($(SYSTYPE), LeonardoBoost)
 
-# CC         = nvc -Minfo=all -v -Mneginfo $(GPU_FLAG)
+#CC         = nvc -Minfo=all -v -Mneginfo $(GPU_FLAG)
 #CDEBUG     = -g -O0 -Wall -Wextra $(OMP_FLAG)
 #COPTIMIZED  = -O3 -Wall -Wextra -Wno-unused-result $(OMP_FLAG)
 
 CDEBUG      = -g -O0 -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
 COPTIMIZED  = -O3 -fast -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
+# COPTIMIZED  = -g -fast -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
 
 MPI         = /leonardo/prod/opt/libraries/openmpi/4.1.6/nvhpc--24.3/
 MPI_LIBR    = -L$(MPI)/lib -lmpi
@@ -228,6 +256,10 @@ GSL_INCL    = -I$(GSL)/include
 PFFT        = $(LIBDIR)/pfft/pfft
 PFFT_LIBR   = -L$(PFFT)/lib -lpfft
 PFFT_INCL   = -I$(PFFT)/include
+
+PMT         = /leonardo/home/userexternal/dgoz0000/lib/pmt/local
+PMT_LIBR    = -L$(PMT)/lib64 -lpmt
+PMT_INCL    = -I$(PMT)/include
 
 endif
 
@@ -285,11 +317,11 @@ endif
 
 # Include paths for libraries #
 
-INC =  $(PFFT_INCL) $(FFTW_INCL) $(MPI_INCL) $(GSL_INCL)
+INC =  $(PFFT_INCL) $(FFTW_INCL) $(MPI_INCL) $(GSL_INCL) $(PMT_INCL)
 
 # Library flags #
 
-LIB = -lm $(PFFT_LIBR) $(FFTW_LIBR) $(MPI_LIBR) $(GSL_LIBR)
+LIB = -lm $(PFFT_LIBR) $(FFTW_LIBR) $(MPI_LIBR) $(GSL_LIBR) $(PMT_LIBR)
 
 # Compiler options : choose from CDEBUG or COPTIMIZED #
 
@@ -305,23 +337,30 @@ OBJECTS = fmax.o  variables.o  cubic_spline_interpolation.o cosmo.o initializati
 	ReadParamfile.o allocations.o LPT.o distribute.o collapse_times.o collapse_times_GPU.o \
 	fragment.o build_groups.o write_halos.o write_snapshot.o pinocchio.o
 
+ifeq ($(ENERGY), YES)
+OBJECTS += energy_pmt_methods.o
+endif
+
 # Main targets and rules
 
 $(EXEC): $(OBJECTS) Makefile
-	$(CC) $(INC) $(COPTS) -o $(RUNDIR)$(EXEC) $(OBJECTS) $(LIB)
+	$(SCOREP_FLAG) $(COMPILER) $(COPTS) $(OPTIONS) -o $(RUNDIR)$(EXEC) $(OBJECTS) $(LIB)
+	ldd $(RUNDIR)$(EXEC)
 
 run_planner: $(OBJECTS) run_planner.o Makefile
 	$(CC) $(INC) $(COPTS) -o run_planner run_planner.o $(OBJECTS) $(LIB)	
 
-
 # Generic rule for compiling source files #
 
+energy_pmt_methods.o: energy/energy_pmt_methods.cpp Makefile energy/energy_pmt_methods.h energy/energy_pmt.h
+	# g++ -std=c++17 $(OPTIONS) $(PMT_INCL) -c $< -o $@
+	$(COMPILER_CPP) -std=c++17 $(OPTIONS) $(PMT_INCL) -c $< -o $@
+
 %.o: %.c Makefile pinocchio.h def_splines.h
-	$(CC) $(INC) $(COPTS) $(OPTIONS) -c $<
+	$(SCOREP_FLAG) $(COMPILER_CC) $(INC) $(COPTS) $(OPTIONS) -c $<
+
 
 # Clean target #
 
 clean:
-	\rm -f *.o *~ $(EXEC) run_planner
-
-
+	rm -f *.o *~ $(EXEC) run_planner

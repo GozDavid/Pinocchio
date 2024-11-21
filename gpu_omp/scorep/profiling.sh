@@ -26,8 +26,6 @@ do
     export SCOREP_METRIC_PERF=${PERF_METRIC}
     export SCOREP_EXPERIMENT_DIRECTORY=profiling
 
-    export OMP_WAIT_POLICY=ACTIVE
-
     # store the output files
     FILE=
 

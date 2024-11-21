@@ -8,7 +8,6 @@ void write_cputimes(void);
 
 int main(int argc, char **argv, char **envp)
 {
-
 #ifdef USE_GPERFTOOLS
   ProfilerStart("pinocchio_gprofile.log");
 #endif
@@ -32,9 +31,23 @@ int main(int argc, char **argv, char **envp)
 #ifdef GPU_OMP
   if (initialization_gpu_omp())
     abort_code();
+
+  PMT_CREATE(&devID, 1, ThisTask, NTasks);
+  
+#else
+
+  // Init PMT
+  PMT_CREATE(NULL, 0, ThisTask, NTasks);
+
+#endif // GPU_OMP
+
+  /* PMT measures */
+  PMT_CPU_START("total", ThisTask);
+#ifdef GPU_OMP
+  PMT_GPU_START("total", devID, ThisTask);
 #endif // GPU_OMP
   
-  /* timing of the code */
+  /* timing of the code */  
   cputime.total=MPI_Wtime();
   greetings();
 
@@ -225,10 +238,36 @@ int main(int argc, char **argv, char **envp)
   if (!ThisTask)
     write_cputimes();
 
+  /* PMT measures */
+  PMT_CPU_STOP("total", ThisTask);
+#ifdef GPU_OMP
+  PMT_GPU_STOP("total", devID, ThisTask);
+#endif // GPU_OMP
+  
+  /* PMT report */
+  for (int Task=0 ; Task<NTasks ; Task++)
+    {
+      if (Task == ThisTask)
+  	{
+	  printf("\n\t#########################################\n");
+	  if (Task == 0)
+	    {
+	      PMT_CPU_SHOW("total", ThisTask);
+	      PMT_CPU_SHOW("collapse_time_CPU", ThisTask);
+	    }
+	  PMT_GPU_SHOW("total", ThisTask);
+	  PMT_GPU_SHOW("collapse_time_GPU", ThisTask);
+	  printf("\n\t#########################################\n");
+          fflush(stdout);
+	}      
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+  
   /* done */
   if (!ThisTask)
     printf("Pinocchio done!\n");
   MPI_Finalize();
+
 #ifdef USE_GPERFTOOLS
       ProfilerStop();
 #endif
@@ -236,13 +275,11 @@ int main(int argc, char **argv, char **envp)
   return 0;
 }
 
-
 void abort_code(void)
 {
   printf("Task %d aborting...\n",ThisTask);
   MPI_Abort(MPI_COMM_WORLD,1);
 }
-
 
 void write_cputimes()
 {
@@ -272,5 +309,6 @@ void write_cputimes()
   printf("  Groups            : %14.6f (%5.2f%%)\n", cputime.group,100.*cputime.group/cputime.total);
 #endif
   printf("Total I/O           : %14.6f (%5.2f%%)\n", cputime.io,   100.*cputime.io   /cputime.total);
-}
 
+  return;
+}

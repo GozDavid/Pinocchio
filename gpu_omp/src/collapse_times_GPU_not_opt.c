@@ -280,9 +280,9 @@ void common_initialization_gpu(const unsigned int size)
   /* synch kernel */
 
 #if defined(GPU_OMP_DEBUG)
- #pragma omp target device(internal.device.devID)
+ #pragma omp target device(devID)
 #else
- #pragma omp target teams distribute parallel for device(internal.device.devID)
+ #pragma omp target teams distribute parallel for device(devID)
 #endif // GPU_OMP_DEBUG
   for (unsigned int i=0 ; i<size ; i++)
     {
@@ -356,8 +356,8 @@ int compute_collapse_times_gpu(int ismooth)
 			  (total_size * sizeof(double)),
 			  (internal.device.memory_second_derivatives.offset + internal.device.memory_second_derivatives.tensor[i]),
 			  0,
-			  internal.device.devID,
-			  internal.device.hostID);
+			  devID,
+			  hostID);
       }
   } // omp parallel
   
@@ -377,9 +377,9 @@ int compute_collapse_times_gpu(int ismooth)
   tmp = MPI_Wtime();
 
 #if defined(GPU_OMP_DEBUG)
-   #pragma omp target map(tofrom: local_average, local_variance, all_fails) device(internal.device.devID)
+   #pragma omp target map(tofrom: local_average, local_variance, all_fails) device(devID)
 #else
-   #pragma omp target teams distribute parallel for reduction(+: local_average, local_variance, all_fails) device(internal.device.devID)
+   #pragma omp target teams distribute parallel for reduction(+: local_average, local_variance, all_fails) device(devID)
 #endif // GPU_OMP_DEBUG  
   for (unsigned int index=0 ; index<total_size ; index++)
     {
@@ -435,8 +435,8 @@ int compute_collapse_times_gpu(int ismooth)
 			(total_size * sizeof(int)),
 			0,
 			(internal.device.memory_products.offset + internal.device.memory_products.Rmax),
-			internal.device.hostID,
-			internal.device.devID);
+			hostID,
+			devID);
     } // omp single nowait
 
     #pragma omp single nowait
@@ -447,8 +447,8 @@ int compute_collapse_times_gpu(int ismooth)
 			(total_size * sizeof(PRODFLOAT)),
 			0,
 			(internal.device.memory_products.offset + internal.device.memory_products.Fmax),
-			internal.device.hostID,
-			internal.device.devID);
+			hostID,
+			devID);
     } // omp single nowait
 
     #pragma omp barrier

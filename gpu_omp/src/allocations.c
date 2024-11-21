@@ -424,7 +424,7 @@ int allocate_main_memory()
                            internal.device.memory_second_derivatives.count;
 
   /* GPU memory allocation */
-  internal.device.gpu_main_memory = (char *)omp_target_alloc(internal.device.memory, internal.device.devID);
+  internal.device.gpu_main_memory = (char *)omp_target_alloc(internal.device.memory, devID);
 
   if (internal.device.gpu_main_memory == NULL)
     {
@@ -467,7 +467,7 @@ int allocate_main_memory()
 					   internal.device.memory_second_derivatives.offset + internal.device.memory_second_derivatives.tensor[4],
 					   internal.device.memory_second_derivatives.offset + internal.device.memory_second_derivatives.tensor[5]};
   
-#pragma omp target is_device_ptr(gpu_main_memory) map(from: gpu_working) device(internal.device.devID)
+#pragma omp target is_device_ptr(gpu_main_memory) map(from: gpu_working) device(devID)
   {
     gpu_working = (omp_is_initial_device() ? 0 : 1);
     
@@ -538,8 +538,8 @@ int allocate_main_memory()
 		    (host_spline->size * sizeof(double)),
 		    (internal.device.memory_spline.offset + internal.device.memory_spline.x),
 		    0,
-		    internal.device.devID,
-		    internal.device.hostID);
+		    devID,
+		    hostID);
 
   /* gpu_spline->y */
   omp_target_memcpy((void *)gpu_main_memory,
@@ -547,8 +547,8 @@ int allocate_main_memory()
 		    (host_spline->size * sizeof(double)),
 		    (internal.device.memory_spline.offset + internal.device.memory_spline.y),
 		    0,
-		    internal.device.devID,
-		    internal.device.hostID);
+		    devID,
+		    hostID);
   
   /* gpu_spline->d2y_data */
   omp_target_memcpy((void *)gpu_main_memory,
@@ -556,8 +556,8 @@ int allocate_main_memory()
 		    ((host_spline->size - 1) * sizeof(double)),
 		    (internal.device.memory_spline.offset + internal.device.memory_spline.d2y_data),
 		    0,
-		    internal.device.devID,
-		    internal.device.hostID);
+		    devID,
+		    hostID);
 
   /* gpu_spline->coeff_a */
   omp_target_memcpy((void *)gpu_main_memory,
@@ -565,8 +565,8 @@ int allocate_main_memory()
 		    ((host_spline->size - 1) * sizeof(double)),
 		    (internal.device.memory_spline.offset + internal.device.memory_spline.coeff_a),
 		    0,
-		    internal.device.devID,
-		    internal.device.hostID);
+		    devID,
+		    hostID);
 
   /* gpu_spline->coeff_b */
   omp_target_memcpy((void *)gpu_main_memory,
@@ -574,8 +574,8 @@ int allocate_main_memory()
 		    ((host_spline->size - 1) * sizeof(double)),
 		    (internal.device.memory_spline.offset + internal.device.memory_spline.coeff_b),
 		    0,
-		    internal.device.devID,
-		    internal.device.hostID);
+		    devID,
+		    hostID);
 
   /* gpu_spline->coeff_c */
   omp_target_memcpy((void *)gpu_main_memory,
@@ -583,8 +583,8 @@ int allocate_main_memory()
 		    ((host_spline->size - 1) * sizeof(double)),
 		    (internal.device.memory_spline.offset + internal.device.memory_spline.coeff_c),
 		    0,
-		    internal.device.devID,
-		    internal.device.hostID);
+		    devID,
+		    hostID);
 
   /* gpu_spline->coeff_d */
   omp_target_memcpy((void *)gpu_main_memory,
@@ -592,8 +592,8 @@ int allocate_main_memory()
 		    ((host_spline->size - 1) * sizeof(double)),
 		    (internal.device.memory_spline.offset + internal.device.memory_spline.coeff_d),
 		    0,
-		    internal.device.devID,
-		    internal.device.hostID);
+		    devID,
+		    hostID);
   
   /*--------------------------------------------------------------------------*/
 

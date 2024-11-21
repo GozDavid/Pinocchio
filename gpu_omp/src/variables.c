@@ -10,9 +10,13 @@ internal_data   internal;
 
 char *main_memory, *wheretoplace_mycat;
 product_data *products, *frag;
+
 #ifdef GPU_OMP
+int hostID;
+int devID;
 gpu_product_data gpu_products, host_products;
 #endif // GPU_OMP
+
 unsigned int **seedtable;  // QUESTO RIMANE?
 unsigned int   *cubes_ordering;
 double **kdensity;

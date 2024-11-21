@@ -10,58 +10,64 @@ then
     exit 1
 fi
 
-if [ ${#COMPILER} -eq 0 ]
+if [ ${#COMPILER_CC} -eq 0 ]
 then
-    printf "\n\t Set the COMPILER ...aborting...\n"
+    printf "\n\t Set the COMPILER_CC ...aborting...\n"
     exit 2
+fi
+
+if [ ${#COMPILER_CPP} -eq 0 ]
+then
+    printf "\n\t Set the COMPILER_CPP ...aborting...\n"
+    exit 3
 fi
 
 if [ ${#SYSTEM} -eq 0 ]
 then
     printf "\n\t Set the SYSTEM ...aborting...\n"
-    exit 3
+    exit 4
 fi
 
 if [ ${#EXEC[@]} -eq 0 ]
 then
     printf "\n\t EXEC empty ...aborting...\n"
-    exit 4
+    exit 5
 fi
 
 if [ ${#NTASKS[@]} -eq 0 ]
 then
     printf "\n\t NTASKS empty ...aborting...\n"
-    exit 5
+    exit 6
 fi
 
 if [ ${#MPI_MAP_BY[@]} -eq 0 ]
 then
     printf "\n\t MPI_MAP_BY empty ...aborting...\n"
-    exit 6
+    exit 7
 fi
 
 if [ ${#OMP_THR[@]} -eq 0 ]
 then
     printf "\n\t OMP_THR empty ...aborting...\n"
-    exit 7
+    exit 8
 fi
 
 if [ ! -f ${PARAMFILE_TEMPLATE} ]
 then
     printf "\n\t Paramfile: ${PARAMFILE} not found ...aborting...\n"
-    exit 8
+    exit 9
 fi
 
 if [ ! -f ${OUTPUTS} ]
 then
     printf "\n\t Outputs: ${OUTPUTS} not found ...aborting...\n"
-    exit 9
+    exit 10
 fi
 
-if [ "${OUTPUT_DIRECTORY}" = "${WORKDIR}/scorep" ] || [ "${OUTPUT_DIRECTORY}" = "${WORKDIR}/src" ] || [ "${OUTPUT_DIRECTORY}" = "${WORKDIR}/example" ]
+if [ "${OUTPUT_DIRECTORY}" = "${WORKDIR}/scorep" ] || [ "${OUTPUT_DIRECTORY}" = "${WORKDIR}/src" ] || [ "${OUTPUT_DIRECTORY}" = "${WORKDIR}/example" ] || [ "${OUTPUT_DIRECTORY}" = "${WORKDIR}/src/energy" ]
 then
     printf "\n\t Invalid output directory: ${OUTPUT_DIRECTORY} ...aborting...\n"
-    exit 10
+    exit 11
 fi
 
 # create the OUTPUT_DIRECTORY
@@ -70,7 +76,15 @@ mkdir -p ${OUTPUT_DIRECTORY}
 if [ ${PROFILING} -eq 1 ] || [ ${TRACING} -eq 1 ]
 then
     DIRNAME_PREFIX=profiling
-else
+fi
+
+if [ ${ENERGY} -eq 1 ]
+then
+    DIRNAME_PREFIX=energy
+fi
+
+if [ ${PRODUCTION} -eq 1 ]
+then
     DIRNAME_PREFIX=production
 fi
 
@@ -103,5 +117,5 @@ done # loop over BOX
 if [ ${#PARAMFILE[@]} -ne ${#OUT_DIR[@]} ]
 then
     printf "\n\t Missmatch between paramefile and output directory ...aborting...\n"
-    exit 11
+    exit 12
 fi

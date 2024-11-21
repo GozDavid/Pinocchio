@@ -63,8 +63,8 @@ int initialization_gpu_omp()
     }
 
   /* set the device number: one-to-one correspondence between MPI process and accelerator */
-  internal.device.hostID = omp_get_initial_device();
-  internal.device.devID  = (host_rank % numdev);
+  hostID = omp_get_initial_device();
+  devID  = (host_rank % numdev);
 
   /* free the MPI subgroup */
   MPI_Comm_free(&host_comm);
@@ -83,6 +83,8 @@ int initialization()
   /* timing */
   cputime.init=MPI_Wtime();
 
+  cputime.coll = 0;
+  
   /* this is for gsl integration */
   workspace = gsl_integration_workspace_alloc(NWINT);
   /* this is the initialization of the random number generator */

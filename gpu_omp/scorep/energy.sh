@@ -3,10 +3,10 @@
 for DIRECTORY in ${OUT_DIR[@]}
 do
     cd ${DIRECTORY}
-    EXEC=($(find . -maxdepth 1 -name "*_Prod" -executable -type f -print))
+    EXEC=($(find . -maxdepth 1 -name "*_Energy" -executable -type f -print))
     if [ ${#EXEC[@]} -lt 1 ]
     then
-	printf "\n\t Cannot find any _Prod executable... aborting... \n"
+	printf "\n\t Cannot find any _Energy executable... aborting... \n"
 	exit 1
     fi
 
@@ -24,7 +24,7 @@ do
     export SCOREP_ENABLE_PROFILING=0
     export SCOREP_ENABLE_TRACING=0
     export SCOREP_METRIC_PAPI=
-    export SCOREP_EXPERIMENT_DIRECTORY=production
+    export SCOREP_EXPERIMENT_DIRECTORY=energy
 
     # store the output files
     FILE=
@@ -78,7 +78,7 @@ do
 		    mkdir -p ${SUB_DIR} && cd ${SUB_DIR} && rm -rf * && cp ${OUTPUTS} ${PARAMFILE_} .
 
 		    PARA=$(basename ${PARAMFILE_})
-    		    OUT=${PWD}/$(basename ${EXE})_nodes_${NODES}_map_${MAP}_MPI_${NT}_OMP_${OMP}_production_output.txt
+    		    OUT=${PWD}/$(basename ${EXE})_nodes_${NODES}_map_${MAP}_MPI_${NT}_OMP_${OMP}_energy_output.txt
     		    FILE+=("${OUT}")
 
 		    printf "\n\t Running ${EXE} using:"                                            |& tee ${OUT}
@@ -120,4 +120,4 @@ done # loop over OUT_DIR
 
 cd ${WORKDIR}
 
-printf "\n\t Production done \n"
+printf "\n\t Energy done \n"

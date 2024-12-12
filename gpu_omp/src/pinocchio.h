@@ -769,6 +769,6 @@ void coord_transformation_cartesian_polar(PRODFLOAT *, double *, double *, doubl
    /* remove inlining */
    #define FORCE_INLINE
 #else
-   #define FORCE_INLINE inline
+#define FORCE_INLINE // inline
 #endif /* _SCOREP */
 

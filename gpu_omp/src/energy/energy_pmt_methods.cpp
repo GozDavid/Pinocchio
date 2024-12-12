@@ -81,7 +81,7 @@ void Create_PMT(const int * const  devID,
 									       pmt::nvml::NVML::Create(devID[dev])));
 #elif defined(_ENERGY_AMD_)
 	  sensor_gpu.at(task).insert(std::pair<int, std::unique_ptr<pmt::PMT>>(devID[dev],
-									       pmt::rocm::AMD::Create(devID[dev])));
+									       pmt::rocm::ROCM::Create(devID[dev])));
 #endif
 	} // numGPUs
     }

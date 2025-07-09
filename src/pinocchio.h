@@ -335,7 +335,7 @@ extern unsigned int **seedtable;
 extern double **kdensity;
 extern double **density;
 extern double ***first_derivatives;
-extern double ***second_derivatives;
+extern double *second_derivatives;
 
 #if defined(GPU_OMP) 
 typedef struct
@@ -840,3 +840,17 @@ void coord_transformation_cartesian_polar(PRODFLOAT *, double *, double *, doubl
 #define FORCE_INLINE // inline
 #endif /* _SCOREP */
 
+static inline double GET_SECOND_DERIVATIVES(const int i, const int j, const int k)
+{
+  return second_derivatives[(i * 6 * MyGrids[i].total_local_size) + (j * MyGrids[i].total_local_size) + k];
+}
+
+static inline double* GET_P_SECOND_DERIVATIVES(const int i, const int j, const int k)
+{
+  return &second_derivatives[(i * 6 * MyGrids[i].total_local_size) + (j * MyGrids[i].total_local_size) + k];
+}
+
+static inline void SET_SECOND_DERIVATIVES(const int i, const int j, const int k, const double value)
+{
+  second_derivatives[(i * 6 * MyGrids[i].total_local_size) + (j * MyGrids[i].total_local_size) + k] = value;
+}

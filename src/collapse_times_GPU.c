@@ -169,37 +169,45 @@ double ell_gpu(const int ismooth,
 
 /* ------------------------------------  Computation of collapse time i.e. F = 1 + z_collapse and variance ------------------------------------ */
 
-double inverse_collapse_time_gpu(const int                     ismooth,
-				 const double * const restrict dtensor,
-				       int    * const restrict fail)
+double inverse_collapse_time_gpu(const int    ismooth,
+				 const double dtensor_0,
+				 const double dtensor_1,
+				 const double dtensor_2,
+				 const double dtensor_3,
+				 const double dtensor_4,
+				 const double dtensor_5,
+				       int    *fail)
 {  
   /* Local variables declaration */
   /* mu1, mu2 and mu3 are the principal invariants of the 3x3 tensor of second derivatives */
-  /*  Performs diagonalization of the tensor by calculating the values of mu1, mu2, and mu3 */
-  const double add[6] = {dtensor[0] * dtensor[0],
-			                   dtensor[1] * dtensor[1],
-			                   dtensor[2] * dtensor[2],
-			                   dtensor[3] * dtensor[3],
-			                   dtensor[4] * dtensor[4],
-			                   dtensor[5] * dtensor[5]};
+  /*  Performs diagonalization of the tensor by calculating the values of mu1, mu2, and mu3 */  
+  const double add_0 = (dtensor_0 * dtensor_0);
+  const double add_1 = (dtensor_1 * dtensor_1);
+  const double add_2 = (dtensor_2 * dtensor_2);
+  const double add_3 = (dtensor_3 * dtensor_3);
+  const double add_4 = (dtensor_4 * dtensor_4);
+  const double add_5 = (dtensor_5 * dtensor_5);
   
-  const double mu1   = (dtensor[0] + dtensor[1] + dtensor[2]);
+  const double mu1   = (dtensor_0 + dtensor_1 + dtensor_2);
   const double mu1_2 = (mu1 * mu1);
-  const double mu2   = ((0.5 * mu1_2) - (0.5 * (add[0] + add[1] + add[2])) - (add[3] + add[4] + add[5]));
+  const double mu2   = ((0.5 * mu1_2) - (0.5 * (add_0 + add_1 + add_2)) - (add_3 + add_4 + add_5));
   
   /* mu3 calculation */
-  const double mu3 = ((dtensor[0] * dtensor[1] * dtensor[2])       +
-		                  (2.0 * dtensor[3] * dtensor[4] * dtensor[5]) -
-		                  (dtensor[0] * add[5])                        -
-		                  (dtensor[1] * add[4])                        -
-		                  (dtensor[2] * add[3]));
+  const double mu3 = ((dtensor_0 * dtensor_1 * dtensor_2)       +
+		      (2.0 * dtensor_3 * dtensor_4 * dtensor_5) -
+		      (dtensor_0 * add_5)                       -
+		      (dtensor_1 * add_4)                       -
+		      (dtensor_2 * add_3));
 
   /* Check if the tensor is already diagonal */
   const double q = (mu1_2 - 3.0 * mu2) / 9.0;
 
   // q == 0.0
   const unsigned int mask_q0 = ((q <= EPSILON) && (q >= -EPSILON));
-  const double x_q0[3]       = {dtensor[0], dtensor[1], dtensor[2]};
+  const double x_q0_0 = dtensor_0;
+  const double x_q0_1 = dtensor_1;
+  const double x_q0_2 = dtensor_2;
+ 
   const double inv_q         = (mask_q0 ? 0.0 : (1.0 / q));
   
   // q > 0.0
@@ -209,26 +217,26 @@ double inverse_collapse_time_gpu(const int                     ismooth,
   if (mask) // kernel abort
     return -10.0;
     
-  const double sq          = (2.0 * sqrt(q));
-  const double inv_sq      = (mask_q0 ? 0.0 : (1.0 / sq));
-  const double t           = acos(2.0 * r * inv_q * inv_sq);
-  const double x_q_gt_0[3] = {((-sq * cos(t * INV_3)) + (mu1 * INV_3)),
-			                        ((-sq * cos((t + 2.0 * PI) * INV_3)) + (mu1 * INV_3)),
-			                        ((-sq * cos((t + 4.0 * PI) * INV_3)) + (mu1 * INV_3))};
-
+  const double sq     = (2.0 * sqrt(q));
+  const double inv_sq = (mask_q0 ? 0.0 : (1.0 / sq));
+  const double t      = acos(2.0 * r * inv_q * inv_sq);
+  const double x_q_gt_0_0 = ((-sq * cos(t * INV_3)) + (mu1 * INV_3));
+  const double x_q_gt_0_1 = ((-sq * cos((t + 2.0 * PI) * INV_3)) + (mu1 * INV_3));
+  const double x_q_gt_0_2 = ((-sq * cos((t + 4.0 * PI) * INV_3)) + (mu1 * INV_3));
+  
   /* Ordering and inverse collapse time */
-  double x1 = (mask_q0 * x_q0[0]) + (!mask_q0 * x_q_gt_0[0]);
-  double x2 = (mask_q0 * x_q0[1]) + (!mask_q0 * x_q_gt_0[1]);
-  double x3 = (mask_q0 * x_q0[2]) + (!mask_q0 * x_q_gt_0[2]);
+  double x1 = (mask_q0 * x_q0_0) + (!mask_q0 * x_q_gt_0_0);
+  double x2 = (mask_q0 * x_q0_1) + (!mask_q0 * x_q_gt_0_1);
+  double x3 = (mask_q0 * x_q0_2) + (!mask_q0 * x_q_gt_0_2);
 
   /* Ordering and inverse collapse time */
   ord_gpu(&x1, &x2, &x3);
 
-  #ifdef TABULATED_CT
+#ifdef TABULATED_CT
   const double ret = interpolate_collapse_time(ismooth,x1,x2,x3);
-  #else 
+#else 
   const double ret = ell_gpu(ismooth, x1, x2, x3);
-  #endif
+#endif
 
   return ret;
 }
@@ -311,7 +319,7 @@ int compute_collapse_times_gpu(int ismooth)
     for (int i=tid ; i<6 ; i+=thr)
       {
 	omp_target_memcpy((void *)internal.device.gpu_main_memory, 
-			  (void *)second_derivatives[0][i],
+			  (void *)GET_P_SECOND_DERIVATIVES(0, i, 0),
 			  (total_size * sizeof(double)),
 			  (internal.device.memory_second_derivatives.offset + internal.device.memory_second_derivatives.tensor[i]),
 			  0,
@@ -322,14 +330,12 @@ int compute_collapse_times_gpu(int ismooth)
 
   #elif defined(GPU_OMP_FULL) 
 
-  // Update each individual each individual second_derivatives
-  for (int igrid = 0; igrid < Ngrids; igrid++) {
-    for (int i = 0; i < 6; i++) {
-        #pragma omp target update to(second_derivatives[igrid][i][0:total_size]) device(devID) nowait
-    }
-  }
-  #pragma omp taskwait
+  size_t count_second_derivatives = 0;
+  for (int igrid=0 ; igrid<Ngrids ; igrid++)
+    count_second_derivatives += (6 * total_size);
 
+  #pragma omp target update to(second_derivatives[0: count_second_derivatives]) device(devID)
+  
   #endif
 
   gputime.memory_transfer.collapse_times += (MPI_Wtime() - tmp);
@@ -343,8 +349,6 @@ int compute_collapse_times_gpu(int ismooth)
   double local_average = 0.0, local_variance = 0.0;
   int all_fails        = 0; 
   
-  /* const size_t Nblocks = ((total_size + GPU_OMP_BLOCK - 1) / GPU_OMP_BLOCK); */
-  
   tmp = MPI_Wtime();
 
 #if defined(GPU_OMP_DEBUG)
@@ -355,25 +359,33 @@ int compute_collapse_times_gpu(int ismooth)
   for (unsigned int index=0 ; index<total_size ; index++)
     {
       /* Computation of second derivatives of the potential i.e. the gravity Hessian */
-      double diff_ten[6]; 
-      for (int i=0 ; i<6 ; i++)
-	    { 
-        #if !defined(GPU_OMP_FULL)
-	      diff_ten[i] = gpu_second_derivatives.tensor[i][index];
-        #else
-        diff_ten[i] = second_derivatives[0][i][index];
-        #endif
-	    }
+#if defined(GPU_OMP_FULL)
+      const double diff_ten_0 = second_derivatives[(0 * total_size) + index];
+      const double diff_ten_1 = second_derivatives[(1 * total_size) + index];
+      const double diff_ten_2 = second_derivatives[(2 * total_size) + index];
+      const double diff_ten_3 = second_derivatives[(3 * total_size) + index];
+      const double diff_ten_4 = second_derivatives[(4 * total_size) + index];
+      const double diff_ten_5 = second_derivatives[(5 * total_size) + index];
+#else
+      const double diff_ten_0 = gpu_second_derivatives.tensor[0][index];
+      const double diff_ten_1 = gpu_second_derivatives.tensor[1][index];
+      const double diff_ten_2 = gpu_second_derivatives.tensor[2][index];
+      const double diff_ten_3 = gpu_second_derivatives.tensor[3][index];
+      const double diff_ten_4 = gpu_second_derivatives.tensor[4][index];
+      const double diff_ten_5 = gpu_second_derivatives.tensor[5][index];
+#endif
         
       /* Computation of the variance of the linear density field */
-      const double delta = (diff_ten[0] + diff_ten[1] + diff_ten[2]);
+      const double delta = (diff_ten_0 + diff_ten_1 + diff_ten_2);
       local_average      += delta;
       local_variance     += (delta * delta);
 
       /* Computation of the collapse time */
       int fail;	
       /* inverse_collapse_time(funzione ell) ---- qui si usa le GPU spline */
-      const double Fnew = inverse_collapse_time_gpu(ismooth, diff_ten, &fail);
+      const double Fnew = inverse_collapse_time_gpu(ismooth,
+						    diff_ten_0, diff_ten_1, diff_ten_2, diff_ten_3, diff_ten_4, diff_ten_5,
+						    &fail);
       all_fails         += fail;
       
       /* Updating collapse time */      

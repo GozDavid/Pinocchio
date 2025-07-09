@@ -562,12 +562,12 @@ int set_grids()
   kdensity=(double**)malloc(Ngrids * sizeof(double*));
   density=(double**)malloc(Ngrids * sizeof(double*));
   first_derivatives=(double***)malloc(Ngrids * sizeof(double**));
-  second_derivatives=(double***)malloc(Ngrids * sizeof(double**));
+  /* second_derivatives=(double***)malloc(Ngrids * sizeof(double**)); */
 
   for (igrid=0; igrid<Ngrids; igrid++)
     {
       first_derivatives[igrid]=(double**)malloc(3 * sizeof(double*));
-      second_derivatives[igrid]=(double**)malloc(6 * sizeof(double*));
+      /* second_derivatives[igrid]=(double**)malloc(6 * sizeof(double*)); */
     }
   /* moved to GenIC */
   /* seedtable=(unsigned int**)malloc(Ngrids * sizeof(unsigned int*)); */

@@ -540,7 +540,8 @@ int compute_collapse_times(int ismooth)
       double diff_ten[6]; 
       for (int i=0 ; i<6 ; i++)
 	{
-	  diff_ten[i] = second_derivatives[0][i][index];
+	  /* diff_ten[i] = second_derivatives[0][i][index]; */
+	  diff_ten[i] = GET_SECOND_DERIVATIVES(0, i, index);
 	}
         
       /* Computation of the variance of the linear density field */

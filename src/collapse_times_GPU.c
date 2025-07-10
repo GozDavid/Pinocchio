@@ -81,19 +81,22 @@ double ell_classic_gpu(const int    ismooth,
   double ell = 0.0;
 
   /* Vanishing lambda1 eigenvalue case */
-  const unsigned int mask_l1 = ((l1 > -SMALL) && (l1 < SMALL));
-  ell                        += (mask_l1 * -0.1);
+  const unsigned int mask_l1     = ((l1 > -SMALL) && (l1 < SMALL));
+  const unsigned int not_mask_l1 = (mask_l1 ? 0 : 1);
+  ell                        += ((double)mask_l1 * -0.1);
 
   const double den = det / 126. + 5. * l1 * del * (del - l1) / 84.;
 
-  const unsigned int mask_den = ((den > -SMALL) && (den < SMALL));
+  const unsigned int mask_den     = ((den > -SMALL) && (den < SMALL));
+  const unsigned int not_mask_den = (mask_den ? 0 : 1);
   /* Check 1st perturbative order conditions */
 
-  const unsigned int mask_del_l1 = (((del - l1) > -SMALL) && ((del - l1) < SMALL));
-  ell                            += (mask_del_l1 * mask_den * !mask_l1) * ((l1 > 0.0) ? (1.0 / l1) : -0.1); /* Zel'dovich approximation */
+  const unsigned int mask_del_l1     = (((del - l1) > -SMALL) && ((del - l1) < SMALL));
+  const unsigned int not_mask_del_l1 = (mask_del_l1 ? 0 : 1);
+  ell                            += (double)(mask_del_l1 * mask_den * not_mask_l1) * ((l1 > 0.0) ? (1.0 / l1) : -0.1); /* Zel'dovich approximation */
   /* Check 2nd perturbative order conditions */
   const double dis = (7.0 * l1 * (l1 + 6.0 * del));
-  ell              += (!mask_del_l1 * mask_den * !mask_l1) * ((dis < 0.0) ? -0.1 : (7. * l1 - sqrt(dis)) / (3. * l1 * (l1 - del)));
+  ell              += (double)(not_mask_del_l1 * mask_den * not_mask_l1) * ((dis < 0.0) ? -0.1 : (7. * l1 - sqrt(dis)) / (3. * l1 * (l1 - del)));
   /* 3rd order perturbative solution. For more details about the equations implemented, see Monaco 1996a */
             
   /* Intermediate values */
@@ -113,25 +116,26 @@ double ell_classic_gpu(const int    ismooth,
   /* ---------------- Case 1 --------------- */
   /* If R^2 - Q^2 > 0, which is valid for spherical and quasi-spherical perturbations */
 
-  const unsigned int mask_r_2_q_3 = (r_2_q_3 > 0.0);
+  const unsigned int mask_r_2_q_3     = (r_2_q_3 > 0.0);
+  const unsigned int not_mask_r_2_q_3 = (mask_r_2_q_3 ? 0 : 1);
   /* 3rd order solution */
   const double fabs_r = ((r > 0.0) ? r : -r);
   const double inv_r  = (((r > -SMALL) && (r < SMALL)) ? 0.0 : (1.0 / r));
-  const double sq     = pow(sqrt(mask_r_2_q_3 * r_2_q_3) + fabs_r, 0.333333333333333);
+  const double sq     = pow(sqrt((double)mask_r_2_q_3 * r_2_q_3) + fabs_r, 0.333333333333333);
   const double inv_sq = (((sq > -SMALL) && (sq < SMALL)) ? 0.0 : (1.0 / sq));
-  ell                 += (mask_r_2_q_3 * !mask_den * !mask_l1) * ((-fabs_r * inv_r) * (sq + (q * inv_sq)) - (a1 * INV_3));
+  ell                 += (double)(mask_r_2_q_3 * not_mask_den * not_mask_l1) * ((-fabs_r * inv_r) * (sq + (q * inv_sq)) - (a1 * INV_3));
 
   /* ---------------- Case 2 --------------- */
   /* The solution has to be chosen as the smallest non-negative one between s1, s2, and s3 */            
-  const double sq_      = !mask_r_2_q_3 * (2.0 * sqrt((q > 0.0) * q));
+  const double sq_      = (double)not_mask_r_2_q_3 * (2.0 * sqrt((double)(q > 0.0) * q));
   const double inv_q    = (((q > -SMALL) && (q < SMALL)) ? 0.0 : (1.0 / q));
   const double inv_sq_  = (((sq_ > -SMALL) && (sq_ < SMALL)) ? 0.0 : (1.0 / sq_));
-  const double t        = !mask_r_2_q_3 * acos(2.0 * r * inv_q * inv_sq_);
-  const double a1_inv_3 = !mask_r_2_q_3 * (a1 * INV_3);
+  const double t        = (double)not_mask_r_2_q_3 * acos(2.0 * r * inv_q * inv_sq_);
+  const double a1_inv_3 = (double)not_mask_r_2_q_3 * (a1 * INV_3);
 
-  double s1 = (!mask_r_2_q_3 * !mask_den * !mask_l1) * (-sq_ * cos(t * INV_3) - a1_inv_3);
-  double s2 = (!mask_r_2_q_3 * !mask_den * !mask_l1) * (-sq_ * cos((t + 2. * PI) * INV_3) - a1_inv_3);
-  double s3 = (!mask_r_2_q_3 * !mask_den * !mask_l1) * (-sq_ * cos((t + 4. * PI) * INV_3) - a1_inv_3);
+  double s1 = (double)(not_mask_r_2_q_3 * not_mask_den * not_mask_l1) * (-sq_ * cos(t * INV_3) - a1_inv_3);
+  double s2 = (double)(not_mask_r_2_q_3 * not_mask_den * not_mask_l1) * (-sq_ * cos((t + 2. * PI) * INV_3) - a1_inv_3);
+  double s3 = (double)(not_mask_r_2_q_3 * not_mask_den * not_mask_l1) * (-sq_ * cos((t + 4. * PI) * INV_3) - a1_inv_3);
 
   ord_gpu(&s1, &s2, &s3);
 
@@ -141,7 +145,7 @@ double ell_classic_gpu(const int    ismooth,
 
   const unsigned int mask_del_ell = ((del > 0.0) && (ell > 0.0));
   const double inv_del            = (mask_del_ell ? (1.0 / del) : 0.0);
-  ell                             += mask_del_ell * (-0.364 * inv_del * exp(-6.5 * (l1 - l2) * inv_del - 2.8 * (l2 - l3) * inv_del));  
+  ell                             += (double)mask_del_ell * (-0.364 * inv_del * exp(-6.5 * (l1 - l2) * inv_del - 2.8 * (l2 - l3) * inv_del));  
   
   return ell;
 }
@@ -204,11 +208,12 @@ double inverse_collapse_time_gpu(const int    ismooth,
 
   // q == 0.0
   const unsigned int mask_q0 = ((q <= EPSILON) && (q >= -EPSILON));
+  const unsigned int not_mask_q0 = (mask_q0 ? 0 : 1);
   const double x_q0_0 = dtensor_0;
   const double x_q0_1 = dtensor_1;
   const double x_q0_2 = dtensor_2;
  
-  const double inv_q         = (mask_q0 ? 0.0 : (1.0 / q));
+  const double inv_q = (mask_q0 ? 0.0 : (1.0 / q));
   
   // q > 0.0
   const double r          = -(((2.0 * mu1_2 * mu1) - (9.0 * mu1 * mu2) + (27.0 * mu3)) / 54.0);
@@ -225,9 +230,9 @@ double inverse_collapse_time_gpu(const int    ismooth,
   const double x_q_gt_0_2 = ((-sq * cos((t + 4.0 * PI) * INV_3)) + (mu1 * INV_3));
   
   /* Ordering and inverse collapse time */
-  double x1 = (mask_q0 * x_q0_0) + (!mask_q0 * x_q_gt_0_0);
-  double x2 = (mask_q0 * x_q0_1) + (!mask_q0 * x_q_gt_0_1);
-  double x3 = (mask_q0 * x_q0_2) + (!mask_q0 * x_q_gt_0_2);
+  double x1 = ((double)mask_q0 * x_q0_0) + ((double)not_mask_q0 * x_q_gt_0_0);
+  double x2 = ((double)mask_q0 * x_q0_1) + ((double)not_mask_q0 * x_q_gt_0_1);
+  double x3 = ((double)mask_q0 * x_q0_2) + ((double)not_mask_q0 * x_q_gt_0_2);
 
   /* Ordering and inverse collapse time */
   ord_gpu(&x1, &x2, &x3);

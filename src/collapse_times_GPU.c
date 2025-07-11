@@ -51,6 +51,7 @@
 /*-----------------------------------------------------------------------------------------------------------------------------------*/
 
 /* Orders a,b,c in decreasing order a>b>c */
+#pragma omp declare target
 void ord_gpu(double *const restrict a,
 	     double *const restrict b,
 	     double *const restrict c)
@@ -63,16 +64,20 @@ void ord_gpu(double *const restrict a,
 
   return;
 }
-
+#pragma omp end declare target
 /*------------------------------------------------------- Functions implementation --------------------------------------------------------*/
 
 /* Classical ellipsoidal collapse solution */
+#pragma omp declare target
 double ell_classic_gpu(const int    ismooth,
 		       const double l1,
 		       const double l2,
 		       const double l3)
 {
   /* The actual implementation solves the branch thread-divergence */
+
+  const double inv3 = INV_3;
+  const double pi = PI;
   
   /* Local variables declaration */
   const double del = (l1 + l2 + l3);
@@ -81,18 +86,18 @@ double ell_classic_gpu(const int    ismooth,
   double ell = 0.0;
 
   /* Vanishing lambda1 eigenvalue case */
-  const unsigned int mask_l1     = ((l1 > -SMALL) && (l1 < SMALL));
-  const unsigned int not_mask_l1 = (mask_l1 ? 0 : 1);
+  const int mask_l1     = ((l1 > -SMALL) && (l1 < SMALL));
+  const int not_mask_l1 = (mask_l1 ? 0 : 1);
   ell                        += ((double)mask_l1 * -0.1);
 
   const double den = det / 126. + 5. * l1 * del * (del - l1) / 84.;
 
-  const unsigned int mask_den     = ((den > -SMALL) && (den < SMALL));
-  const unsigned int not_mask_den = (mask_den ? 0 : 1);
+  const int mask_den     = ((den > -SMALL) && (den < SMALL));
+  const int not_mask_den = (mask_den ? 0 : 1);
   /* Check 1st perturbative order conditions */
 
-  const unsigned int mask_del_l1     = (((del - l1) > -SMALL) && ((del - l1) < SMALL));
-  const unsigned int not_mask_del_l1 = (mask_del_l1 ? 0 : 1);
+  const int mask_del_l1     = (((del - l1) > -SMALL) && ((del - l1) < SMALL));
+  const int not_mask_del_l1 = (mask_del_l1 ? 0 : 1);
   ell                            += (double)(mask_del_l1 * mask_den * not_mask_l1) * ((l1 > 0.0) ? (1.0 / l1) : -0.1); /* Zel'dovich approximation */
   /* Check 2nd perturbative order conditions */
   const double dis = (7.0 * l1 * (l1 + 6.0 * del));
@@ -116,8 +121,8 @@ double ell_classic_gpu(const int    ismooth,
   /* ---------------- Case 1 --------------- */
   /* If R^2 - Q^2 > 0, which is valid for spherical and quasi-spherical perturbations */
 
-  const unsigned int mask_r_2_q_3     = (r_2_q_3 > 0.0);
-  const unsigned int not_mask_r_2_q_3 = (mask_r_2_q_3 ? 0 : 1);
+  const int mask_r_2_q_3     = (r_2_q_3 > 0.0);
+  const int not_mask_r_2_q_3 = (mask_r_2_q_3 ? 0 : 1);
   /* 3rd order solution */
   const double fabs_r = ((r > 0.0) ? r : -r);
   const double inv_r  = (((r > -SMALL) && (r < SMALL)) ? 0.0 : (1.0 / r));
@@ -133,21 +138,31 @@ double ell_classic_gpu(const int    ismooth,
   const double t        = (double)not_mask_r_2_q_3 * acos(2.0 * r * inv_q * inv_sq_);
   const double a1_inv_3 = (double)not_mask_r_2_q_3 * (a1 * INV_3);
 
+  
   double s1 = (double)(not_mask_r_2_q_3 * not_mask_den * not_mask_l1) * (-sq_ * cos(t * INV_3) - a1_inv_3);
   double s2 = (double)(not_mask_r_2_q_3 * not_mask_den * not_mask_l1) * (-sq_ * cos((t + 2. * PI) * INV_3) - a1_inv_3);
   double s3 = (double)(not_mask_r_2_q_3 * not_mask_den * not_mask_l1) * (-sq_ * cos((t + 4. * PI) * INV_3) - a1_inv_3);
+  
+  
+  double hi = _MAX_(_MAX_(s1, s2), s3);
+  double lo = _MIN_(_MIN_(s1, s2), s3);
+  s2 = s1 + s2 + s3 - lo - hi;
+  s1 = hi;
+  s3 = lo;
+  
+  //ord_gpu(&s1, &s2, &s3);
 
-  ord_gpu(&s1, &s2, &s3);
-
+  
   ell += (s3 > 0.0) * s3;
   ell += ((s3 < 0.0) && (s2 > 0.0)) * s2;
   ell += ((s3 < 0.0) && (s2 < 0.0) && (s1 > 0.0)) * s1;      
 
-  const unsigned int mask_del_ell = ((del > 0.0) && (ell > 0.0));
+  const int mask_del_ell = ((del > 0.0) && (ell > 0.0));
   const double inv_del            = (mask_del_ell ? (1.0 / del) : 0.0);
   ell                             += (double)mask_del_ell * (-0.364 * inv_del * exp(-6.5 * (l1 - l2) * inv_del - 2.8 * (l2 - l3) * inv_del));  
   
   return ell;
+  
 }
 
 /*---------------------------------------- Calculation of b_c == growing mode at collapse time ---------------------------------------*/
@@ -160,10 +175,10 @@ double ell_gpu(const int ismooth,
 
 #ifdef ELL_CLASSIC
 
-    const double bc = ell_classic_gpu(ismooth, l1, l2, l3);
-
-    return ((bc > 0.0) * (1.0 + InverseGrowingMode(bc, ismooth)));
-
+  const double bc = ell_classic_gpu(ismooth, l1, l2, l3);
+  
+  return ((bc > 0.0) * (1.0 + InverseGrowingMode(bc, ismooth)));
+          
 #else
 
 #error "GPU works with ELL_CLASSIC only!"    
@@ -180,7 +195,7 @@ double inverse_collapse_time_gpu(const int    ismooth,
 				 const double dtensor_3,
 				 const double dtensor_4,
 				 const double dtensor_5,
-				       int    *fail)
+				 int    *fail)
 {  
   /* Local variables declaration */
   /* mu1, mu2 and mu3 are the principal invariants of the 3x3 tensor of second derivatives */
@@ -207,8 +222,8 @@ double inverse_collapse_time_gpu(const int    ismooth,
   const double q = (mu1_2 - 3.0 * mu2) / 9.0;
 
   // q == 0.0
-  const unsigned int mask_q0 = ((q <= EPSILON) && (q >= -EPSILON));
-  const unsigned int not_mask_q0 = (mask_q0 ? 0 : 1);
+  const int mask_q0 = ((q <= EPSILON) && (q >= -EPSILON));
+  const int not_mask_q0 = (mask_q0 ? 0 : 1);
   const double x_q0_0 = dtensor_0;
   const double x_q0_1 = dtensor_1;
   const double x_q0_2 = dtensor_2;
@@ -217,7 +232,7 @@ double inverse_collapse_time_gpu(const int    ismooth,
   
   // q > 0.0
   const double r          = -(((2.0 * mu1_2 * mu1) - (9.0 * mu1 * mu2) + (27.0 * mu3)) / 54.0);
-  const unsigned int mask = (((q * q * q) < (r * r)) || (q < 0.0));
+  const int mask = (((q * q * q) < (r * r)) || (q < 0.0));
   *fail                   = (mask ? 1 : 0);
   if (mask) // kernel abort
     return -10.0;
@@ -235,8 +250,16 @@ double inverse_collapse_time_gpu(const int    ismooth,
   double x3 = ((double)mask_q0 * x_q0_2) + ((double)not_mask_q0 * x_q_gt_0_2);
 
   /* Ordering and inverse collapse time */
-  ord_gpu(&x1, &x2, &x3);
+  //ord_gpu(&x1, &x2, &x3);
 
+  
+  double hi = _MAX_(_MAX_(x1, x2), x3);
+  double lo = _MIN_(_MIN_(x1, x2), x3);
+  x2 = x1 + x2 + x3 - lo - hi;
+  x1 = hi;
+  x3 = lo;
+  
+  
 #ifdef TABULATED_CT
   const double ret = interpolate_collapse_time(ismooth,x1,x2,x3);
 #else 
@@ -245,6 +268,7 @@ double inverse_collapse_time_gpu(const int    ismooth,
 
   return ret;
 }
+#pragma omp end declare target
 
 /* Function: common_initialization */
 /* Performed once by the host */
@@ -351,18 +375,22 @@ int compute_collapse_times_gpu(int ismooth)
   /*----------------- Calculation of variance, average, and collapse time -------------*/
 
   /* Local average and variance declaration */
-  double local_average = 0.0, local_variance = 0.0;
-  int all_fails        = 0; 
-  
+  double local_average  = 0.0;
+  double local_variance = 0.0;
+  int all_fails         = 0;
+   
   tmp = MPI_Wtime();
 
 #if defined(GPU_OMP_DEBUG)
    #pragma omp target map(tofrom: local_average, local_variance, all_fails) device(devID)
 #else
-   #pragma omp target teams distribute parallel for reduction(+: local_average, local_variance, all_fails) device(devID)
+  //#pragma omp target teams distribute parallel for device(devID)
+
+  #pragma omp target teams distribute parallel for device(devID) nowait
 #endif // GPU_OMP_DEBUG  
-  for (unsigned int index=0 ; index<total_size ; index++)
+  for (unsigned int index=0; index<total_size; index++)
     {
+
       /* Computation of second derivatives of the potential i.e. the gravity Hessian */
 #if defined(GPU_OMP_FULL)
       const double diff_ten_0 = second_derivatives[(0 * total_size) + index];
@@ -381,16 +409,19 @@ int compute_collapse_times_gpu(int ismooth)
 #endif
         
       /* Computation of the variance of the linear density field */
-      const double delta = (diff_ten_0 + diff_ten_1 + diff_ten_2);
-      local_average      += delta;
-      local_variance     += (delta * delta);
 
+      
       /* Computation of the collapse time */
-      int fail;	
+      int fail = 0;	
       /* inverse_collapse_time(funzione ell) ---- qui si usa le GPU spline */
+
+      //const double Fnew = (double)index;
+
+ 
       const double Fnew = inverse_collapse_time_gpu(ismooth,
 						    diff_ten_0, diff_ten_1, diff_ten_2, diff_ten_3, diff_ten_4, diff_ten_5,
 						    &fail);
+       
       all_fails         += fail;
       
       /* Updating collapse time */      
@@ -400,8 +431,33 @@ int compute_collapse_times_gpu(int ismooth)
     } // target region
 
   /*-------------------- END OF GPU CALCULATION -----------------------------------------------*/
+  
+  /* Needed to fix the reduction problem in the previous loop */
+#if defined(GPU_OMP_FULL) 
+#pragma omp target teams distribute parallel for reduction(+:local_average, local_variance) device(devID) nowait
+  for (unsigned int index=0; index<total_size; index++)
+    {
+      /* Computation of second derivatives of the potential i.e. the gravity Hessian */
+
+      const double diff_ten_0 = second_derivatives[(0 * total_size) + index];
+      const double diff_ten_1 = second_derivatives[(1 * total_size) + index];
+      const double diff_ten_2 = second_derivatives[(2 * total_size) + index];
+
+      /* Computation of the variance of the linear density field */
+
+      
+      const double delta = (diff_ten_0 + diff_ten_1 + diff_ten_2);
+
+      local_average    += delta;
+      local_variance   += (delta * delta);
+    }
+#endif //GPU_OMP_FULL
+
+  /* Needed to synchronize the two previous kernels */
+#pragma omp taskwait
   gputime.computation.collapse_times += (MPI_Wtime() - tmp);
-    
+
+  
   /* Fail check during computation of the inverse collapse time */
   /* If there were failures, an error message is printed and the function returns 1 */
   if (all_fails)

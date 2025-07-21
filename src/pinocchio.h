@@ -82,7 +82,8 @@
 #endif // defined(CUSTOM_INTERPOLATION) || defined(GPU_OMP) || defined(FULL_GPU_OMP)
 
 // header for PMT library
-#include "energy/energy_pmt.h"
+//#define _NVIDIA_
+#include "energy_parallel/energy_pmt.h"
 
 /* this library is used to vectorize the computation of collapse times */
 /* #if !(defined(__aarch64__) || defined(__arm__)) */

@@ -91,7 +91,7 @@ int initialization_gpu_omp()
   /* set the device number: one-to-one correspondence between MPI process and accelerator */
   hostID = omp_get_initial_device();
   //devID  = (host_rank % numdev);
-  devID  = (omp_get_num_devices == 1 ? 0 : host_rank % numdev);
+  devID  = (omp_get_num_devices() == 1 ? 0 : host_rank % numdev);
 
   /* free the MPI subgroup */
   MPI_Comm_free(&host_comm);

@@ -522,7 +522,7 @@ int compute_collapse_times(int ismooth)
     }
   
   /* PMT measure */
-  PMT_CPU_START("collapse_time_CPU", ThisTask);
+  PMT_CPU_START("collapse_time_CPU");
   /* timing the main loop of 'compute_collapse_times' function */
   double cputmp = MPI_Wtime();
   /*-----------------------------------------------------------------------------------*/
@@ -600,7 +600,7 @@ int compute_collapse_times(int ismooth)
   cputime.coll += (MPI_Wtime() - cputmp);
 
   /* PMT measures */
-  PMT_CPU_STOP("collapse_time_CPU", ThisTask);
+  PMT_CPU_STOP("collapse_time_CPU");
   
   return 0;
 

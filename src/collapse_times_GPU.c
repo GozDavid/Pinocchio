@@ -330,8 +330,10 @@ int compute_collapse_times_gpu(int ismooth)
     }
 
   /* PMT measure */
-  PMT_CPU_START("collapse_time_CPU", ThisTask);
-  PMT_GPU_START("collapse_time_GPU", devID, ThisTask);
+  
+  PMT_CPU_START("collapse_time_CPU");
+  //PMT_GPU_START("collapse_time_GPU", devID);
+  
   /* timing the main loop of 'compute_collapse_times' function */
   double cputmp, tmp;  
   cputmp = tmp = MPI_Wtime();  
@@ -550,8 +552,9 @@ int compute_collapse_times_gpu(int ismooth)
   cputime.coll += (MPI_Wtime() - cputmp);
 
   /* PMT measures */
-  PMT_CPU_STOP("collapse_time_CPU", ThisTask);
-  PMT_GPU_STOP("collapse_time_GPU", devID, ThisTask);
+  
+  PMT_CPU_STOP("collapse_time_CPU");
+  //PMT_GPU_STOP("collapse_time_GPU", devID);
   
   return 0;
 

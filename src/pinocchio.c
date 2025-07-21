@@ -55,23 +55,27 @@ int main(int argc, char **argv, char **envp)
 #endif
 
   /* GPU initialization */
-#if defined(GPU_OMP) || defined(GPU_OMP_FULL)
+ #if defined(GPU_OMP) || defined(GPU_OMP_FULL)
   if (initialization_gpu_omp())
     abort_code();
 
-  PMT_CREATE(&devID, 1, ThisTask, NTasks);
+ #if defined(_NVIDIA_)
+  PMT_CREATE(&ThisTask, 1);
+ #else
+  PMT_CREATE(NULL,0);
+ #endif //_NVIDIA_
   
-#else
+ #else
 
   // Init PMT
-  PMT_CREATE(NULL, 0, ThisTask, NTasks);
-
+  PMT_CREATE(NULL,0);
+  
 #endif // GPU_OMP || FULL_GPU_OMP
 
   /* PMT measures */
-  PMT_CPU_START("total", ThisTask);
+  PMT_CPU_START("total");
 #if defined(GPU_OMP) || defined(GPU_OMP_FULL)
-  PMT_GPU_START("total", devID, ThisTask);
+  //PMT_GPU_START("total", devID);
 #endif // GPU_OMP || FULL_GPU_OMP
    
   /* timing of the code */  
@@ -271,13 +275,22 @@ int main(int argc, char **argv, char **envp)
     write_cputimes();
 
   /* PMT measures */
-  PMT_CPU_STOP("total", ThisTask);
+  PMT_CPU_STOP("total");
 #if defined(GPU_OMP) || defined(GPU_OMP_FULL) 
 // #ifdef GPU_OMP
-  PMT_GPU_STOP("total", devID, ThisTask);
+  //PMT_GPU_STOP("total", devID);
 #endif // GPU_OMP
+
+  
+  PMT_CPU_SHOW("collapse_time_CPU");
+  //PMT_GPU_SHOW("collapse_time_GPU", devID);
+
+  
+  PMT_CPU_SHOW("total");
+  //PMT_GPU_SHOW("total", devID);
   
   /* PMT report */
+  /*
   for (int Task=0 ; Task<NTasks ; Task++)
     {
       if (Task == ThisTask)
@@ -295,7 +308,7 @@ int main(int argc, char **argv, char **envp)
 	}      
       MPI_Barrier(MPI_COMM_WORLD);
     }
-  
+  */
   /* done */
   if (!ThisTask)
     printf("Pinocchio done!\n");

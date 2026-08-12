@@ -31,7 +31,8 @@ RUNDIR = ./
 
 ########## System-specific Configuration ############################
 
-SYSTYPE ?= LeonardoBoost
+SYSTYPE ?= hpc-docker-nvidia
+# SYSTYPE ?= hpc-docker-gnu
 
 #####################################################################
 #####################################################################
@@ -41,17 +42,14 @@ EXEC         ?= pinocchio.x
 # Compilation options
 
 # C compiler
-COMPILER_CC  ?= mpicc
-COMPILER_CPP ?= mpic++
+COMPILER     = mpicc
 DEBUG        ?= NO
 OMP          ?= YES
 GPU          ?= NO
 FULL_GPU     ?= YES
+PPMT         ?= YES
 SCOREP       ?= NO
 NSIGHT       ?= NO
-ENERGY_PARALLEL ?= NO
-ENERGY_CPU   ?= NO
-ENERGY_GPU   ?= NO
 ####################################################################
 
 ########## Preprocessor Definitions ################################
@@ -125,27 +123,23 @@ SCOREP_FLAG =
 endif
 #####################################################################
 
-########## ENERGY OPTIONS ###################################
-ENERGY = NO
+########## PPMT OPTION ###################################
 
-ifeq ($(ENERGY_CPU), YES)
-ENERGY = YES
-OPTIONS += -D_MPICH_   # switch-on CPU power measurements through RAPL counters
+ifeq ($(PPMT), YES)
+
+# Acivate PPMT APIs in Pinocchio code
+OPTIONS += -DPPMT
+
+# MPI in Pinocchio is always ON
+OPTIONS += -DPPMT_WITH_MPI
+
+# NVIDIA if GPU is ON
+ifeq ($(FULL_GPU), YES)
+OPTIONS += -DPPMT_WITH_NVIDIA
 endif
 
-ifeq ($(ENERGY_GPU), YES)
-ENERGY   = YES
-OPTIONS += -D_ENERGY_NVIDIA_ # switch-on NVIDIA GPU power measurements
 endif
-
-ifeq ($(ENERGY), YES)
-OPTIONS += -D_ENERGY_PMT_ # use PMT library
-COMPILER = $(COMPILER_CPP)
-else
-COMPILER = $(COMPILER_CC)
-endif
-
-#############################################################
+############# PPMT ##########################################
 
 ######################################################
 ####################### GPU flag ####################
@@ -231,11 +225,82 @@ PFFT_INCL   = -I$(PFFT)/include
 
 endif
 
+###################### LeonardoBoost ######################
+
+ifeq ($(SYSTYPE),hpc-docker-nvidia)
+
+$(info Compiling hpc-docker-nvidia)
+
+EXEC = pinocchio_$(SYSTYPE)
+
+CDEBUG      = -g -O0 -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
+COPTIMIZED  = -O3 -fast -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
+
+LIBDIR      = /usr/local
+
+FFTW        = $(LIBDIR)/fftw/fftw-3.3.10
+FFTW_LIBR   = -L$(FFTW)/lib -lfftw3_mpi -lfftw3 $(OMP_FFTW)
+FFTW_INCL   = -I$(FFTW)/include
+
+GSL         = $(LIBDIR)/gsl/gsl-2.8
+GSL_LIBR    = -L$(GSL)/lib -lgsl -lgslcblas -lm
+GSL_INCL    = -I$(GSL)/include
+
+PFFT        = $(LIBDIR)/pfft/1.0.8-alpha
+PFFT_LIBR   = -L$(PFFT)/lib -lpfft
+PFFT_INCL   = -I$(PFFT)/include
+
+PPMT_PATH   = /workspace/tmp/ppmt
+ifeq ($(PPMT),YES)
+PPMT_INCL   = -I$(PPMT_PATH)/include
+PPMT_LIBR   = -L$(PPMT_PATH)/lib/mpic++ -lpmt
+ifeq ($(FULL_GPU),YES)
+PPMT_LIBR += -lppmt_mpi_nvidia
+else
+PPMT_LIBR += -lppmt_mpi
+endif # FULL_GPU
+
+endif # PPMT
+
+endif # SYSTYPE
+
+ifeq ($(SYSTYPE),hpc-docker-gnu)
+
+$(info Compiling hpc-docker-gnu)
+
+EXEC = pinocchio_$(SYSTYPE)
+
+CDEBUG      = -g -O0 -march=native -mtune=native -fno-omit-frame-pointer $(OMP_FLAG)
+COPTIMIZED  = -O3 -march=native -mtune=native $(OMP_FLAG)
+
+LIBDIR      = /usr/local
+
+FFTW        = $(LIBDIR)/fftw/fftw-3.3.10
+FFTW_LIBR   = -L$(FFTW)/lib -lfftw3_mpi -lfftw3 $(OMP_FFTW)
+FFTW_INCL   = -I$(FFTW)/include
+
+GSL         = $(LIBDIR)/gsl/gsl-2.8
+GSL_LIBR    = -L$(GSL)/lib -lgsl -lgslcblas -lm
+GSL_INCL    = -I$(GSL)/include
+
+PFFT        = $(LIBDIR)/pfft/1.0.8-alpha
+PFFT_LIBR   = -L$(PFFT)/lib -lpfft
+PFFT_INCL   = -I$(PFFT)/include
+
+PPMT_PATH   = /workspace/tmp/ppmt
+ifeq ($(PPMT),YES)
+PPMT_INCL   = -I$(PPMT_PATH)/include
+PPMT_LIBR = -L$(PPMT_PATH)/lib/mpic++ -lpmt -lppmt_mpi
+endif # PPMT
+
+endif # SYSTYPE
+
+
 ifeq ($(SYSTYPE), Magellanus)
 
 CDEBUG      = -g -O0 -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
 COPTIMIZED  = -O3 -fast -Minfo=all -v -Mneginfo -march=native -mtune=native -fomit-frame-pointer $(GPU_FLAG) $(OMP_FLAG)
-#COPTIMIZED  = -O3 -march=native -mtune=native -fomit-frame-pointer -ftree-vectorize $(GPU_FLAG) $(OMP_FLAG)
+# COPTIMIZED  = -O3 -march=native -mtune=native -fomit-frame-pointer -ftree-vectorize $(GPU_FLAG) $(OMP_FLAG)
 #COPTIMIZED  = -g -O3 -march=native -mtune=native $(GPU_FLAG) $(OMP_FLAG)
 #COPTIMIZED      = -g -O0 -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
 
@@ -270,7 +335,7 @@ endif
 
 # ###################### PLEIADI ######################
 
-# ifeq ($(SYSTYPE), pleiadi)
+ifeq ($(SYSTYPE), pleiadi)
 
 COPTIMIZED  = -O3 -g -fopenmp -march=native -mtune=native -ftree-vectorize
 FFTW        = /u/dgoz/lib/fftw-3.3.10_pleiadi
@@ -285,18 +350,18 @@ GSL         = /u/dgoz/lib/gsl-2.7.1_pleiadi
 GSL_LIBR    = -L$(GSL)/lib -lgsl -lgslcblas -lm
 GSL_INCL    = -I$(GSL)/include
 
-# endif
+endif
 ######################################################
 
 ########## System-specific Configuration end ########## 
 
 # Include paths for libraries #
 
-INC =  $(PFFT_INCL) $(FFTW_INCL) $(MPI_INCL) $(GSL_INCL) $(PMT_INCL)
+INC =  $(PFFT_INCL) $(FFTW_INCL) $(MPI_INCL) $(GSL_INCL) $(PPMT_INCL)
 
 # Library flags #
 
-LIB = -lm $(PFFT_LIBR) $(FFTW_LIBR) $(MPI_LIBR) $(GSL_LIBR) $(PMT_LIBR)
+LIB = -lm -lstdc++ $(PFFT_LIBR) $(FFTW_LIBR) $(MPI_LIBR) $(GSL_LIBR) $(PPMT_LIBR)
 
 # Compiler options : choose from CDEBUG or COPTIMIZED #
 
@@ -320,7 +385,7 @@ OBJECTS = fmax.o  variables.o  cubic_spline_interpolation.o cubic_spline_interpo
 # Main targets and rules
 
 $(EXEC): $(OBJECTS) Makefile
-	$(SCOREP_FLAG) $(COMPILER) -lstdc++ $(COPTS) $(OPTIONS) -o $(RUNDIR)$(EXEC) $(OBJECTS) $(LIB)
+	$(SCOREP_FLAG) $(COMPILER) $(COPTS) $(OPTIONS) -o $(RUNDIR)$(EXEC) $(OBJECTS) $(LIB)
 	ldd $(RUNDIR)$(EXEC)
 
 run_planner: $(OBJECTS) run_planner.o Makefile
@@ -328,12 +393,8 @@ run_planner: $(OBJECTS) run_planner.o Makefile
 
 # Generic rule for compiling source files #
 
-#energy_pmt_methods.o: energy_parallel/energy_pmt_methods.cpp Makefile energy_parallel/energy_pmt_methods.h energy_parallel/energy_pmt.h
-	# g++ -std=c++17 $(OPTIONS) $(PMT_INCL) -c $< -o $@
-#	$(COMPILER_CPP) -std=c++17 $(OPTIONS) $(PMT_INCL) -c $< -o $@
-
 %.o: %.c Makefile pinocchio.h def_splines.h 
-	$(SCOREP_FLAG) $(COMPILER_CC) $(INC) $(COPTS) $(OPTIONS) -c $<
+	$(SCOREP_FLAG) $(COMPILER) $(INC) $(COPTS) $(OPTIONS) -c $<
 
 
 # Clean target #

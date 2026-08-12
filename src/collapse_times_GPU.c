@@ -334,11 +334,13 @@ int compute_collapse_times_gpu(int ismooth)
   double cputmp, tmp;  
   cputmp = tmp = MPI_Wtime();  
 
-  /* PMT measure */
-
-  
-  // PMT_CPU_START("collapse_time_CPU");
-  // PMT_GPU_START("collapse_time_GPU", devID);
+  /* PPMT measure */
+#if defined(PPMT)
+  ppmt_startCPU(profiler, "collapse");
+#if defined(GPU_OMP_FULL)
+  ppmt_startGPU(profiler, "collapse", devID);
+#endif // GPU_OMP_FULL
+#endif // PPMT
   
   
   /*--------------------- GPU memory movements ----------------------------------------*/
@@ -529,10 +531,14 @@ int compute_collapse_times_gpu(int ismooth)
   /* CPU collapse time */	
 
   /* PMT measures */
-  
-  // PMT_CPU_STOP("collapse_time_CPU");
-  // PMT_GPU_STOP("collapse_time_GPU", devID);
-  
+
+#if defined(PPMT)
+#if defined(GPU_OMP_FULL)
+  ppmt_stopGPU(profiler, "collapse", devID);
+#endif // GPU_OMP_FULL  
+  ppmt_stopCPU(profiler, "collapse");
+#endif // PPMT
+
   cputime.coll += (MPI_Wtime() - cputmp);
 
     

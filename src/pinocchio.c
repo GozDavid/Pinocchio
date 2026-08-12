@@ -58,26 +58,22 @@ int main(int argc, char **argv, char **envp)
   #if defined(GPU_OMP) || defined(GPU_OMP_FULL) 
    if (initialization_gpu_omp()) 
      abort_code(); 
+  #endif
 
-  #if defined(_NVIDIA_) 
-  // PMT_CREATE(&ThisTask, 1); 
-  #else 
-  //  PMT_CREATE(NULL,0); 
-  #endif //_NVIDIA 
-  
-  #else
+   // Init PPMT
+#if defined(PPMT) && !defined(GPU_OMP_FULL)
 
-   // Init PMT
-  //  PMT_CREATE(NULL,0);
-  
-  #endif // GPU_OMP || FULL_GPU_OMP
-
-   /* PMT measures */
-   //PMT_CPU_START("total");
-  #if defined(GPU_OMP) || defined(GPU_OMP_FULL)
-   //PMT_GPU_START("total", devID);
-  #endif // GPU_OMP || FULL_GPU_OMP
+   profiler = ppmt_create(1, 0, NULL, 0, 0, 0);
+   ppmt_startCPU(profiler, "main");
    
+#elif defined(PPMT) && defined(GPU_OMP_FULL)
+
+   profiler = ppmt_create(1, 1, &devID, 1, 0, 0);
+   ppmt_startCPU(profiler, "main");
+   ppmt_startGPU(profiler, "main", devID);
+
+#endif // PPMT
+
   /* timing of the code */  
   cputime.total=MPI_Wtime();
   greetings();
@@ -269,47 +265,23 @@ int main(int argc, char **argv, char **envp)
   fflush(stdout);
   MPI_Barrier(MPI_COMM_WORLD);
 
+  /* PPMT measures */
+#if defined(PPMT)
+#if defined(GPU_OMP_FULL)
+   ppmt_stopGPU(profiler, "main", devID);
+#endif // GPU_OMP_FULL
+  
+   ppmt_stopCPU(profiler, "main");
+   
+   ppmt_show(profiler);
+
+#endif // PPMT
+  
   /* output detailed cpu times */
   cputime.total=MPI_Wtime()-cputime.total;
   if (!ThisTask)
     write_cputimes();
 
-  /* PMT measures */
-  //PMT_CPU_STOP("total");
-#if defined(GPU_OMP) || defined(GPU_OMP_FULL) 
-// #ifdef GPU_OMP
-  //PMT_GPU_STOP("total", devID);
-#endif // GPU_OMP
-
-  
-  // PMT_CPU_SHOW("collapse_time_CPU");
-  // PMT_GPU_SHOW("collapse_time_GPU", devID);
-
-  // PMT_FREE();
-
-  //PMT_CPU_SHOW("total");
-  //PMT_GPU_SHOW("total", devID);
-  
-  /* PMT report */
-  /*
-  for (int Task=0 ; Task<NTasks ; Task++)
-    {
-      if (Task == ThisTask)
-  	{
-	  printf("\n\t#########################################\n");
-	  if (Task == 0)
-	    {
-	      PMT_CPU_SHOW("total", ThisTask);
-	      PMT_CPU_SHOW("collapse_time_CPU", ThisTask);
-	    }
-	  PMT_GPU_SHOW("total", ThisTask);
-	  PMT_GPU_SHOW("collapse_time_GPU", ThisTask);
-	  printf("\n\t#########################################\n");
-          fflush(stdout);
-	}      
-      MPI_Barrier(MPI_COMM_WORLD);
-    }
-  */
   /* done */
   if (!ThisTask)
     printf("Pinocchio done!\n");

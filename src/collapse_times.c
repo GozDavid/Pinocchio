@@ -521,8 +521,14 @@ int compute_collapse_times(int ismooth)
       common_initialization(total_size);
     }
   
-  /* PMT measure */
-//   PMT_CPU_START("collapse_time_CPU");
+  /* PPMT measure */
+
+#if defined(PPMT)
+
+  ppmt_startCPU(profiler, "collapse");
+  
+#endif // PPMT  
+  
   /* timing the main loop of 'compute_collapse_times' function */
   double cputmp = MPI_Wtime();
   /*-----------------------------------------------------------------------------------*/
@@ -568,8 +574,12 @@ int compute_collapse_times(int ismooth)
   /* CPU collapse time */	
   cputime.coll += (MPI_Wtime() - cputmp);
 
-  /* PMT measures */
-//   PMT_CPU_STOP("collapse_time_CPU");
+  /* PPMT measures */
+#if defined(PPMT)
+
+  ppmt_stopCPU(profiler, "collapse");
+  
+#endif // PPMT  
   
   /* Fail check during computation of the inverse collapse time */
   /* If there were failures, an error message is printed and the function returns 1 */

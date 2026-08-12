@@ -50,6 +50,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifdef PPMT
+   #include <ppmt/ppmt_c.h>
+#endif // PPMT
 
 #ifdef _OPENMP
    #include <omp.h>
@@ -81,11 +84,6 @@
 #include "cubic_spline_interpolation.h"
 #endif // defined(CUSTOM_INTERPOLATION) || defined(GPU_OMP) || defined(FULL_GPU_OMP)
 
-// header for PMT library
-#if defined(GPU_OMP) || defined(GPU_OMP_FULL)
-#define _NVIDIA_
-#endif
-#include "energy_parallel/energy_pmt.h"
 
 /* this library is used to vectorize the computation of collapse times */
 /* #if !(defined(__aarch64__) || defined(__arm__)) */
@@ -857,3 +855,7 @@ static inline void SET_SECOND_DERIVATIVES(const int i, const int j, const int k,
 {
   second_derivatives[(i * 6 * MyGrids[i].total_local_size) + (j * MyGrids[i].total_local_size) + k] = value;
 }
+
+#if defined (PPMT)
+extern ppmt_c *profiler;
+#endif

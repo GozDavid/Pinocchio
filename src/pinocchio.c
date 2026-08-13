@@ -31,7 +31,9 @@
  #include "def_splines.h" 
 
 void abort_code(void); 
-void write_cputimes(void); 
+void write_cputimes(void);
+
+#define PPMT_LOOP 5
 
 int main(int argc, char **argv, char **envp) 
  { 
@@ -64,19 +66,25 @@ int main(int argc, char **argv, char **envp)
 #if defined(PPMT) && !defined(GPU_OMP_FULL)
 
    profiler = ppmt_create(1, 0, NULL, 0, 0, 0);
-   ppmt_startCPU(profiler, "main");
    
 #elif defined(PPMT) && defined(GPU_OMP_FULL)
 
    profiler = ppmt_create(1, 1, &devID, 1, 0, 0);
-   ppmt_startCPU(profiler, "main");
-   ppmt_startGPU(profiler, "main", devID);
 
 #endif // PPMT
 
   /* timing of the code */  
   cputime.total=MPI_Wtime();
   greetings();
+
+  for (int loop = 0; loop < PPMT_LOOP; loop++)
+    {
+#if defined(PPMT)
+        ppmt_startCPU(profiler, "main");
+#if defined(GPU_OMP_FULL)
+        ppmt_startGPU(profiler, "main", devID);        
+#endif // GPU_OMP_FULL
+#endif // PPMT    
 
   /* checks that the parameter file is given in the command line */
   if (argc<2)
@@ -272,11 +280,14 @@ int main(int argc, char **argv, char **envp)
 #endif // GPU_OMP_FULL
   
    ppmt_stopCPU(profiler, "main");
-   
-   ppmt_show(profiler);
 
 #endif // PPMT
-  
+   } // PPMT_LOOP
+
+#if defined(PPMT)
+   ppmt_show(profiler);   
+#endif // PPMT   
+   
   /* output detailed cpu times */
   cputime.total=MPI_Wtime()-cputime.total;
   if (!ThisTask)

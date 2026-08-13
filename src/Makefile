@@ -253,7 +253,7 @@ PFFT_INCL   = -I$(PFFT)/include
 PPMT_PATH   = /workspace/tmp/ppmt
 ifeq ($(PPMT),YES)
 PPMT_INCL   = -I$(PPMT_PATH)/include
-PPMT_LIBR   = -L$(PPMT_PATH)/lib/mpic++ -lpmt
+PPMT_LIBR   = -L$(PPMT_PATH)/lib/nvc++ -lpmt
 ifeq ($(FULL_GPU),YES)
 PPMT_LIBR += -lppmt_mpi_nvidia
 else
@@ -290,7 +290,7 @@ PFFT_INCL   = -I$(PFFT)/include
 PPMT_PATH   = /workspace/tmp/ppmt
 ifeq ($(PPMT),YES)
 PPMT_INCL   = -I$(PPMT_PATH)/include
-PPMT_LIBR = -L$(PPMT_PATH)/lib/mpic++ -lpmt -lppmt_mpi
+PPMT_LIBR   = -L$(PPMT_PATH)/lib/mpic++ -lpmt -lppmt_mpi
 endif # PPMT
 
 endif # SYSTYPE

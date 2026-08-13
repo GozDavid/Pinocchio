@@ -151,3 +151,7 @@ memory_data memory;
 int ngroups;
 extern pos_data obj, obj1, obj2;
 ScaleDep_data ScaleDep;
+
+#if defined(PPMT)
+ppmt_c *profiler;
+#endif

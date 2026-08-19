@@ -194,8 +194,16 @@ double forward_transform(int ThisGrid)
   
   time=MPI_Wtime();
 
+#if defined(PPMT)
+  ppmt_startCPU(profiler, "fft");
+#endif // PPMT
+  
   pfft_execute(GRID.forward_plan);
 
+#if defined(PPMT)
+  ppmt_stopCPU(profiler, "fft");
+#endif // PPMT
+  
   return MPI_Wtime()-time;
 }
 
@@ -208,8 +216,12 @@ double reverse_transform(int ThisGrid)
 
   time=MPI_Wtime();
 
+#if defined(PPMT)
+  ppmt_startCPU(profiler, "fft");
+#endif // PPMT
+  
   pfft_execute(GRID.reverse_plan);
-
+  
 //  dvec         NORM   = {GRID.norm, GRID.norm, GRID.norm, GRID.norm};
 //  unsigned int mysize = GRID.total_local_size_fft / 4;
 
@@ -224,6 +236,10 @@ double reverse_transform(int ThisGrid)
   for (i = 0 ; i < GRID.total_local_size_fft; i++)
       rvector_fft[ThisGrid][i] *= GRID.norm;
 
+#if defined(PPMT)
+  ppmt_stopCPU(profiler, "fft");
+#endif // PPMT
+  
   return MPI_Wtime() - time;
 }
 

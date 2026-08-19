@@ -31,7 +31,8 @@ RUNDIR = ./
 
 ########## System-specific Configuration ############################
 
-SYSTYPE ?= hpc-docker-nvidia
+SYSTYPE ?= LeonardoBoost
+# SYSTYPE ?= hpc-docker-nvidia
 # SYSTYPE ?= hpc-docker-gnu
 
 #####################################################################
@@ -205,16 +206,21 @@ endif # OMP, YES
 
 ifeq ($(SYSTYPE), LeonardoBoost)
 
+$(info Compiling LeonardoBoost)
+
+EXEC = pinocchio_$(SYSTYPE)
+
 CDEBUG      = -g -O0 -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
 COPTIMIZED  = -O3 -fast -Minfo=all -v -Mneginfo $(GPU_FLAG) $(OMP_FLAG)
 
-LIBDIR      = /leonardo_scratch/fast/CNHPC_1498509/lib/nvhpc-23.11
-FFTW        = $(LIBDIR)/fftw/fftw-3.3.10
-FFTW_LIBR   = -L$(FFTW)/lib -lfftw3_mpi -lfftw3 $(OMP_FFTW)
-FFTW_INCL   = -I$(FFTW)/include
+LIBDIR      = /leonardo/home/userexternal/dgoz0000/lib/nvhpc-25.11
+# FFTW        =  $(LIBDIR)/fftw/fftw-3.3.10
+# FFTW_LIBR   = -L$(FFTW)/lib -lfftw3_mpi -lfftw3 $(OMP_FFTW)
+FFTW_LIBR   = -lfftw3_mpi -lfftw3 $(OMP_FFTW)
+# FFTW_INCL   = -I$(FFTW)/include
 
 
-GSL         = $(LIBDIR)/gsl/gsl-2.7.1
+GSL         = ${LIBDIR}/gsl/gsl-2.8
 GSL_LIBR    = -L$(GSL)/lib -lgsl -lgslcblas -lm
 GSL_INCL    = -I$(GSL)/include
 
@@ -222,6 +228,17 @@ PFFT        = $(LIBDIR)/pfft/pfft
 PFFT_LIBR   = -L$(PFFT)/lib -lpfft
 PFFT_INCL   = -I$(PFFT)/include
 
+PPMT_PATH   = /leonardo/home/userexternal/dgoz0000/lib/ppmt/booster
+ifeq ($(PPMT),YES)
+PPMT_INCL   = -I$(PPMT_PATH)/include
+PPMT_LIBR   = -L$(PPMT_PATH)/lib64/mpic++ -lpmt
+ifeq ($(FULL_GPU),YES)
+PPMT_LIBR += -lppmt_mpi_nvidia
+else
+PPMT_LIBR += -lppmt_mpi
+endif # FULL_GPU
+
+endif # PPMT
 
 endif
 

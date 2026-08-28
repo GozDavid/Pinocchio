@@ -196,12 +196,18 @@ double forward_transform(int ThisGrid)
 
 #if defined(PPMT)
   ppmt_startCPU(profiler, "fft");
+#if defined(GPU_OMP_FULL)
+  ppmt_startGPU(profiler, "fft", devID);        
+#endif // GPU_OMP_FULL
 #endif // PPMT
   
   pfft_execute(GRID.forward_plan);
 
 #if defined(PPMT)
   ppmt_stopCPU(profiler, "fft");
+#if defined(GPU_OMP_FULL)
+  ppmt_stopGPU(profiler, "fft", devID);        
+#endif // GPU_OMP_FULL
 #endif // PPMT
   
   return MPI_Wtime()-time;
@@ -218,6 +224,9 @@ double reverse_transform(int ThisGrid)
 
 #if defined(PPMT)
   ppmt_startCPU(profiler, "fft");
+#if defined(GPU_OMP_FULL)
+  ppmt_startGPU(profiler, "fft", devID);        
+#endif // GPU_OMP_FULL
 #endif // PPMT
   
   pfft_execute(GRID.reverse_plan);
@@ -238,6 +247,9 @@ double reverse_transform(int ThisGrid)
 
 #if defined(PPMT)
   ppmt_stopCPU(profiler, "fft");
+#if defined(GPU_OMP_FULL)
+  ppmt_stopGPU(profiler, "fft", devID);        
+#endif // GPU_OMP_FULL
 #endif // PPMT
   
   return MPI_Wtime() - time;

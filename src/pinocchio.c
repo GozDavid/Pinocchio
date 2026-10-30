@@ -267,9 +267,25 @@ int main(int argc, char **argv, char **envp)
     }
 
   /* fragmentation of the collapsed medium */
+#if defined(PPMT)
+        ppmt_startCPU(profiler, "fragmentation");
+#if defined(GPU_OMP_FULL)
+        ppmt_startGPU(profiler, "fragmentation", devID);        
+#endif // GPU_OMP_FULL
+#endif // PPMT
+  
   if (fragment_driver())
     abort_code();
 
+#if defined(PPMT)
+#if defined(GPU_OMP_FULL)
+   ppmt_stopGPU(profiler, "fragmentation", devID);
+#endif // GPU_OMP_FULL
+  
+   ppmt_stopCPU(profiler, "fragmentation");
+
+#endif // PPMT
+  
   fflush(stdout);
   MPI_Barrier(MPI_COMM_WORLD);
 

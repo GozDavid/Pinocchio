@@ -31,7 +31,7 @@ RUNDIR = ./
 
 ########## System-specific Configuration ############################
 
-SYSTYPE ?= LeonardoBoost
+SYSTYPE ?= LeonardoDCGP
 # SYSTYPE ?= hpc-docker-nvidia
 # SYSTYPE ?= hpc-docker-gnu
 
@@ -47,7 +47,7 @@ COMPILER     = mpicc
 DEBUG        ?= NO
 OMP          ?= YES
 GPU          ?= NO
-FULL_GPU     ?= YES
+FULL_GPU     ?= NO
 PPMT         ?= YES
 SCOREP       ?= NO
 NSIGHT       ?= NO
@@ -128,7 +128,7 @@ endif
 
 ifeq ($(PPMT), YES)
 
-# Acivate PPMT APIs in Pinocchio code
+# Activate PPMT APIs in Pinocchio code
 OPTIONS += -DPPMT
 
 # MPI in Pinocchio is always ON
@@ -243,6 +243,33 @@ endif # PPMT
 endif
 
 ###################### LeonardoBoost ######################
+
+###################### LeonardoDCGP ######################
+ifeq ($(SYSTYPE), LeonardoDCGP)
+
+$(info Compiling LeonardoDCGP)
+
+EXEC = pinocchio_$(SYSTYPE)
+
+CDEBUG      = -g -O0 -v $(OMP_FLAG)
+COPTIMIZED  = -O3 -v $(OMP_FLAG)
+
+GSL_LIBR    = -lgsl -lgslcblas -lm
+
+FFTW_LIBR   = -lfftw3_mpi -lfftw3 $(OMP_FFTW)
+
+PFFT        = /leonardo/home/userexternal/dgoz0000/lib/DCGP/pfft
+PFFT_LIBR   = -L$(PFFT)/lib -lpfft
+PFFT_INCL   = -I$(PFFT)/include
+
+PPMT_PATH   = /leonardo/home/userexternal/dgoz0000/lib/ppmt/dcgp
+ifeq ($(PPMT),YES)
+PPMT_INCL   = -I$(PPMT_PATH)/include
+PPMT_LIBR   = -L$(PPMT_PATH)/lib64/mpic++ -lpmt -lppmt_mpi
+endif # PPMT
+
+endif
+###################### LeonardoDCGP ######################
 
 ifeq ($(SYSTYPE),hpc-docker-nvidia)
 

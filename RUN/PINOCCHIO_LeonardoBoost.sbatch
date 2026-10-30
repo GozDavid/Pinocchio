@@ -1,15 +1,18 @@
 #!/bin/bash
 
 #SBATCH --job-name=PPMT_Booster
-#SBATCH --nodes=2
+#SBATCH --nodes=1
 #SBATCH --exclusive
 #SBATCH --gres=gpu:4
-#SBATCH --time=03:00:00
+#SBATCH --time=02:00:00
 #SBATCH --partition=boost_usr_prod
 ##SBATCH --qos=boost_qos_dbg
 #SBATCH --account=INA24_C6B02
-#SBATCH --output=PPMT_Booster.out
-#SBATCH --error=PPMT_Booster.err
+#SBATCH --output=PPMT_Booster_%j.out
+#SBATCH --error=PPMT_Booster_%j.err
+
+# Redirect standard output and error dynamically at runtime
+# exec > "PPMT_Booster_${SLURM_NNODES}nodes_${SLURM_JOB_ID}.out" 2>&1
 
 module purge
 
@@ -69,7 +72,7 @@ OUT_DIR=${PWD}/PPMT_report_${SYSTEM}
 # loop over MPI tasks per node
 for MPI_PER_NODE in ${TASKS_PER_NODE[@]} ; do
     # loop over nodes
-    for ((NODES=${SLURM_NNODES} ; NODES<=${SLURM_NNODES} ; NODES++)) ; do
+    for ((NODES=1 ; NODES<=${SLURM_NNODES} ; NODES++)) ; do
 	# Calculate total MPI ranks for this run
 	NT=$(( NODES * MPI_PER_NODE ))
 

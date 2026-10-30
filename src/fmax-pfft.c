@@ -194,21 +194,25 @@ double forward_transform(int ThisGrid)
   
   time=MPI_Wtime();
 
-#if defined(PPMT)
-  ppmt_startCPU(profiler, "fft");
-#if defined(GPU_OMP_FULL)
-  ppmt_startGPU(profiler, "fft", devID);        
-#endif // GPU_OMP_FULL
-#endif // PPMT
+#if !defined(PPMT_NO_FFT)
+   #if defined(PPMT)
+     ppmt_startCPU(profiler, "fft");
+      #if defined(GPU_OMP_FULL)
+        ppmt_startGPU(profiler, "fft", devID);        
+      #endif // GPU_OMP_FULL
+   #endif // PPMT
+#endif // PPMT_NO_FFT
   
   pfft_execute(GRID.forward_plan);
 
-#if defined(PPMT)
-  ppmt_stopCPU(profiler, "fft");
-#if defined(GPU_OMP_FULL)
-  ppmt_stopGPU(profiler, "fft", devID);        
-#endif // GPU_OMP_FULL
-#endif // PPMT
+#if !defined(PPMT_NO_FFT)
+   #if defined(PPMT)
+     ppmt_stopCPU(profiler, "fft");
+      #if defined(GPU_OMP_FULL)
+        ppmt_stopGPU(profiler, "fft", devID);        
+      #endif // GPU_OMP_FULL
+   #endif // PPMT
+#endif // PPMT_NO_FFT
   
   return MPI_Wtime()-time;
 }
@@ -222,13 +226,15 @@ double reverse_transform(int ThisGrid)
 
   time=MPI_Wtime();
 
-#if defined(PPMT)
-  ppmt_startCPU(profiler, "fft");
-#if defined(GPU_OMP_FULL)
-  ppmt_startGPU(profiler, "fft", devID);        
-#endif // GPU_OMP_FULL
-#endif // PPMT
-  
+#if !defined(PPMT_NO_FFT)
+   #if defined(PPMT)
+     ppmt_startCPU(profiler, "fft");
+      #if defined(GPU_OMP_FULL)
+        ppmt_startGPU(profiler, "fft", devID);        
+      #endif // GPU_OMP_FULL
+   #endif // PPMT
+#endif // PPMT_NO_FFT
+
   pfft_execute(GRID.reverse_plan);
   
 //  dvec         NORM   = {GRID.norm, GRID.norm, GRID.norm, GRID.norm};
@@ -245,12 +251,15 @@ double reverse_transform(int ThisGrid)
   for (i = 0 ; i < GRID.total_local_size_fft; i++)
       rvector_fft[ThisGrid][i] *= GRID.norm;
 
-#if defined(PPMT)
-  ppmt_stopCPU(profiler, "fft");
-#if defined(GPU_OMP_FULL)
-  ppmt_stopGPU(profiler, "fft", devID);        
-#endif // GPU_OMP_FULL
-#endif // PPMT
+
+#if !defined(PPMT_NO_FFT)
+   #if defined(PPMT)
+     ppmt_stopCPU(profiler, "fft");
+      #if defined(GPU_OMP_FULL)
+        ppmt_stopGPU(profiler, "fft", devID);        
+      #endif // GPU_OMP_FULL
+   #endif // PPMT
+#endif // PPMT_NO_FFT
   
   return MPI_Wtime() - time;
 }
